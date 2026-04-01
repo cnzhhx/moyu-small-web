@@ -6,6 +6,8 @@ import Header from './components/Header.jsx'
 import HotList from './components/HotList.jsx'
 import TodoList from './components/TodoList.jsx'
 import ToolBox from './components/ToolBox.jsx'
+import FakeScreen from './components/FakeScreen.jsx'
+import GameCenter from './components/GameCenter.jsx'
 
 // Toast Context
 const ToastContext = createContext(null)
@@ -91,12 +93,27 @@ function App() {
   const [activePage, setActivePage] = useState('home')
   const [searchOpen, setSearchOpen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [fakeScreenOpen, setFakeScreenOpen] = useState(false)
   const { colors } = useTheme()
 
   // 键盘快捷键处理
   useEffect(() => {
     const handleKeyDown = (e) => {
       const isMod = e.metaKey || e.ctrlKey
+
+      // ` 键切换伪装模式（老板键）
+      if (e.key === '`' && !e.repeat) {
+        e.preventDefault()
+        setFakeScreenOpen(prev => !prev)
+        return
+      }
+
+      // F12 也作为老板键
+      if (e.key === 'F12') {
+        e.preventDefault()
+        setFakeScreenOpen(prev => !prev)
+        return
+      }
 
       // Ctrl/Cmd + K 打开搜索
       if (isMod && e.key.toLowerCase() === 'k') {
@@ -106,11 +123,14 @@ function App() {
         }
       }
 
-      // Ctrl/Cmd + 1/2/3 切换页面
-      if (isMod && ['1', '2', '3'].includes(e.key)) {
+      // Ctrl/Cmd + 1/2/3/4/5 切换页面
+      if (isMod && ['1', '2', '3', '4', '5'].includes(e.key)) {
         e.preventDefault()
-        const pages = ['home', 'todo', 'tools']
-        setActivePage(pages[parseInt(e.key) - 1])
+        const pages = ['home', 'todo', 'tools', 'games']
+        const pageIndex = parseInt(e.key) - 1
+        if (pageIndex < pages.length) {
+          setActivePage(pages[pageIndex])
+        }
       }
 
       // ESC 关闭弹窗
@@ -148,6 +168,8 @@ function App() {
         return <TodoList />
       case 'tools':
         return <ToolBox searchOpen={searchOpen} onSearchChange={handleToolBoxSearch} />
+      case 'games':
+        return <GameCenter />
       default:
         return <HotList />
     }
@@ -157,10 +179,12 @@ function App() {
   const ShortcutModal = () => {
     if (!showShortcuts) return null
     const shortcuts = [
+      { key: '` 或 F12', desc: '切换伪装模式（老板键）' },
       { key: 'Ctrl/Cmd + K', desc: '工具箱搜索' },
       { key: 'Ctrl/Cmd + 1', desc: '切换到首页' },
       { key: 'Ctrl/Cmd + 2', desc: '切换到待办' },
       { key: 'Ctrl/Cmd + 3', desc: '切换到工具箱' },
+      { key: 'Ctrl/Cmd + 4', desc: '切换到游戏中心' },
       { key: 'ESC', desc: '关闭弹窗' },
       { key: '?', desc: '显示快捷键帮助' },
     ]
@@ -209,6 +233,7 @@ function App() {
           </div>
         </div>
         <ShortcutModal />
+        <FakeScreen isOpen={fakeScreenOpen} onClose={() => setFakeScreenOpen(false)} />
       </div>
     </ToastProvider>
   )

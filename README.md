@@ -18,17 +18,18 @@ moyu-small-web/
 ### 📱 Client (Web 前端)
 
 **热榜聚合**
-- 知乎、微博、B站、掘金、抖音、百度、虎扑、36氪、少数派、头条
+- 知乎、微博、B站、掘金、GitHub、抖音、百度、虎扑、36氪、少数派、头条
 - 双栏/单栏自适应布局
 - 实时热度显示
 - 一键跳转原文
+- 支持 JSON/CSV 导出
 
 **待办清单**
 - 本地存储持久化
 - 优先级管理（高/中/低）
 - 进度统计与激励语
 - 拖拽排序
-- 导入/导出功能
+- 导入/导出功能（JSON/CSV）
 
 **工具箱**
 - JSON 格式化/压缩/验证
@@ -44,6 +45,18 @@ moyu-small-web/
 - UUID 生成
 - 摸鱼计算器
 - 二维码生成
+
+**🎮 游戏中心** (新)
+- 贪吃蛇：经典玩法，支持暂停，最高分记录
+- 俄罗斯方块：完整功能，等级系统
+- 数据持久化到本地
+
+**🎭 截图伪装** (新)
+- 老板键：` 或 F12 一键切换
+- 假 IDE 界面（VS Code / IntelliJ 风格）
+- 假终端界面
+- 支持多种编程语言代码高亮
+- 按 ESC 快速退出
 
 ### 🔧 Server (后端服务)
 
@@ -112,8 +125,11 @@ npm install
 
 ### 获取热榜
 
+支持的平台：zhihu, weibo, bilibili, juejin, github, douyin, baidu, hupu, 36kr, sspai, toutiao
+
 ```http
 GET /api/hotlist/zhihu
+GET /api/hotlist/github
 ```
 
 响应：

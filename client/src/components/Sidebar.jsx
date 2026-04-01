@@ -5,6 +5,7 @@ const navItems = [
   { id: 'home', icon: '🏠', label: '首页' },
   { id: 'todo', icon: '✅', label: '待办' },
   { id: 'tools', icon: '🔧', label: '工具箱' },
+  { id: 'games', icon: '🎮', label: '游戏中心' },
 ]
 
 export default function Sidebar({ activePage, onNavigate }) {
@@ -228,7 +229,7 @@ export default function Sidebar({ activePage, onNavigate }) {
         </button>
         <span style={{
           fontSize: 10, color: colors.textMuted, letterSpacing: 0.5,
-        }}>v1.0</span>
+        }}>v1.1</span>
       </div>
     </nav>
     </>

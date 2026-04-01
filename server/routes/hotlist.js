@@ -364,6 +364,69 @@ async function fetchToutiao() {
   );
 }
 
+/** GitHub Trending */
+async function fetchGithub() {
+  return dedupedFetch('github', async () =>
+    fetchWithMetrics('github', async () => {
+      const { data: html } = await fetchWithRetry({
+        method: 'get',
+        url: 'https://github.com/trending',
+        headers: {
+          ...defaultHeaders(),
+          Accept: 'text/html',
+          Referer: 'https://github.com/',
+        },
+        timeout: REQUEST_TIMEOUT,
+        responseType: 'text',
+      });
+      const $ = cheerio.load(html);
+      const list = [];
+
+      // GitHub Trending 页面结构
+      $('article.Box-row').each((i, el) => {
+        if (i >= 20) return false;
+        const $el = $(el);
+        const $link = $el.find('h2 a');
+        const href = $link.attr('href') || '';
+        const title = $link.text().trim().replace(/\s+/g, ' ');
+        const description = $el.find('p.col-9').text().trim();
+        const starsText = $el.find('[href$="/stargazers"]').text().trim();
+        const language = $el.find('[itemprop="programmingLanguage"]').text().trim();
+
+        if (title) {
+          list.push({
+            title: `${title}${language ? ` [${language}]` : ''}`,
+            description: description || '',
+            url: href.startsWith('http') ? href : `https://github.com${href}`,
+            hot: starsText || '',
+          });
+        }
+      });
+
+      if (!list.length) {
+        // 备用解析策略
+        $('a[href^="/"][href*="/"]').each((i, el) => {
+          if (list.length >= 20) return false;
+          const $el = $(el);
+          const href = $el.attr('href') || '';
+          const text = $el.text().trim();
+          // 匹配 owner/repo 格式
+          if (/^[\w-]+\/[\w.-]+$/.test(text) && href.includes(text)) {
+            list.push({
+              title: text,
+              url: `https://github.com${href}`,
+              hot: '',
+            });
+          }
+        });
+      }
+
+      if (!list.length) throw new Error('GitHub Trending 解析为空');
+      return list;
+    })
+  );
+}
+
 // ====================================================================
 //  源注册表
 // ====================================================================
@@ -379,6 +442,7 @@ const SOURCES = {
   '36kr':   { fetch: fetch36kr,     label: '36氪' },
   sspai:    { fetch: fetchSspai,    label: '少数派' },
   toutiao:  { fetch: fetchToutiao,  label: '今日头条' },
+  github:   { fetch: fetchGithub,   label: 'GitHub' },
 };
 
 // ====================================================================

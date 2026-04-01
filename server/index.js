@@ -59,7 +59,7 @@ const swaggerDocument = {
             description: '热榜来源',
             schema: {
               type: 'string',
-              enum: ['zhihu', 'weibo', 'bilibili', 'juejin', 'douyin', 'baidu', 'hupu', '36kr', 'sspai', 'toutiao'],
+              enum: ['zhihu', 'weibo', 'bilibili', 'juejin', 'douyin', 'baidu', 'hupu', '36kr', 'sspai', 'toutiao', 'github'],
             },
           },
         ],

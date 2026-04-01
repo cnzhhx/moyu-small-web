@@ -7,6 +7,7 @@ const TABS = [
   { key: 'weibo', label: '微博', icon: '🔥' },
   { key: 'bilibili', label: 'B站', icon: '📺' },
   { key: 'juejin', label: '掘金', icon: '💎' },
+  { key: 'github', label: 'GitHub', icon: '🐙' },
   { key: 'douyin', label: '抖音', icon: '🎵' },
   { key: 'baidu', label: '百度', icon: '🔍' },
   { key: 'hupu', label: '虎扑', icon: '🏀' },
