@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTheme } from '../ThemeContext.jsx'
+import { useToast } from '../App.jsx'
 
 const TABS = [
   { key: 'zhihu', label: '知乎', icon: '💬' },
@@ -108,6 +109,7 @@ function HotPanel({ source, onSourceChange }) {
   const [updateTime, setUpdateTime] = useState('')
   const [hoveredIdx, setHoveredIdx] = useState(null)
   const [hoveredTab, setHoveredTab] = useState(null)
+  const [hoveredBtn, setHoveredBtn] = useState(null)
   const tabBarRef = useRef(null)
 
   const fetchData = useCallback((src) => {
@@ -136,6 +138,40 @@ function HotPanel({ source, onSourceChange }) {
 
   const handleRefresh = () => {
     if (!loading && source) fetchData(source)
+  }
+
+  const showToast = useToast()
+
+  // 导出当前热榜
+  const exportHotlist = (format) => {
+    const sourceName = TABS.find(t => t.key === source)?.label || source
+    const timestamp = new Date().toISOString().split('T')[0]
+    try {
+      if (format === 'json') {
+        const data = JSON.stringify({ source: sourceName, updateTime, items }, null, 2)
+        const blob = new Blob([data], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${sourceName}-hotlist-${timestamp}.json`
+        a.click()
+        URL.revokeObjectURL(url)
+      } else if (format === 'csv') {
+        const headers = '排名,标题,热度,链接\n'
+        const rows = items.map((item, idx) => `${idx + 1},"${(item.title || '').replace(/"/g, '""')}",${item.hot || ''},${item.url || ''}`).join('\n')
+        const data = headers + rows
+        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${sourceName}-hotlist-${timestamp}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+      showToast && showToast(`导出成功！已保存为 ${format.toUpperCase()}`, 'success')
+    } catch (err) {
+      showToast && showToast('导出失败，请重试', 'error')
+    }
   }
 
   const tabBarStyle = {
@@ -209,6 +245,42 @@ function HotPanel({ source, onSourceChange }) {
         >
           🔄
         </button>
+        {items.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, marginRight: 8 }}>
+            <button
+              onClick={() => exportHotlist('json')}
+              onMouseEnter={() => setHoveredBtn('json')}
+              onMouseLeave={() => setHoveredBtn(null)}
+              style={{
+                padding: '5px 10px', borderRadius: 6,
+                border: `1px solid ${hoveredBtn === 'json' ? colors.accent : colors.border}`,
+                background: hoveredBtn === 'json' ? colors.accentLight : 'transparent',
+                color: hoveredBtn === 'json' ? colors.accent : colors.textSecondary,
+                cursor: 'pointer', fontSize: 11,
+                transition: 'all 0.2s', whiteSpace: 'nowrap',
+              }}
+              title="导出为 JSON"
+            >
+              JSON
+            </button>
+            <button
+              onClick={() => exportHotlist('csv')}
+              onMouseEnter={() => setHoveredBtn('csv')}
+              onMouseLeave={() => setHoveredBtn(null)}
+              style={{
+                padding: '5px 10px', borderRadius: 6,
+                border: `1px solid ${hoveredBtn === 'csv' ? colors.accent : colors.border}`,
+                background: hoveredBtn === 'csv' ? colors.accentLight : 'transparent',
+                color: hoveredBtn === 'csv' ? colors.accent : colors.textSecondary,
+                cursor: 'pointer', fontSize: 11,
+                transition: 'all 0.2s', whiteSpace: 'nowrap',
+              }}
+              title="导出为 CSV"
+            >
+              CSV
+            </button>
+          </div>
+        )}
         <div style={{ width: 12, flexShrink: 0 }} />
       </div>
 

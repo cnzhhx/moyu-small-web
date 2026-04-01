@@ -21,17 +21,28 @@ const themes = {
 
 const ThemeContext = createContext()
 
+function getSystemTheme() {
+  if (typeof window === 'undefined') return 'dark'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || 'dark'
+      return localStorage.getItem(STORAGE_KEY) || 'system'
     } catch {
-      return 'dark'
+      return 'system'
     }
   })
 
-  const isDark = theme === 'dark'
-  const colors = themes[theme]
+  const [resolvedTheme, setResolvedTheme] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved && saved !== 'system') return saved
+    return getSystemTheme()
+  })
+
+  const isDark = resolvedTheme === 'dark'
+  const colors = themes[resolvedTheme]
 
   useEffect(() => {
     try {
@@ -39,10 +50,24 @@ export function ThemeProvider({ children }) {
     } catch {}
   }, [theme])
 
+  // 监听系统主题变化
+  useEffect(() => {
+    if (theme !== 'system') {
+      setResolvedTheme(theme)
+      return
+    }
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setResolvedTheme(getSystemTheme())
+    const handler = (e) => setResolvedTheme(e.matches ? 'dark' : 'light')
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
+  }, [theme])
+
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  const setThemeMode = (mode) => setTheme(mode)
 
   return (
-    <ThemeContext.Provider value={{ theme, colors, toggleTheme, isDark }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, colors, toggleTheme, setThemeMode, isDark }}>
       {children}
     </ThemeContext.Provider>
   )

@@ -1,9 +1,14 @@
 /**
  * 生成摸鱼岛 Webview HTML 内容
- * @param {string} offWorkTime - 下班时间 HH:mm
+ * @param {Object} config - 配置对象
+ * @param {string} config.offWorkTime - 下班时间 HH:mm
+ * @param {boolean} config.enableHotlist - 是否启用热榜
+ * @param {boolean} config.enableCountdown - 是否启用倒计时
+ * @param {string[]} config.tips - 自定义小贴士列表
  * @returns {string} 完整的 HTML 字符串
  */
-function getWebviewContent(offWorkTime) {
+function getWebviewContent(config) {
+  const { offWorkTime = '18:00', enableHotlist = true, enableCountdown = true, tips: customTips = [] } = config;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -24,6 +29,46 @@ function getWebviewContent(offWorkTime) {
       background-color: var(--vscode-sideBar-background, var(--vscode-editor-background));
       padding: 12px;
       line-height: 1.5;
+    }
+
+    /* 全局加载指示器 */
+    #page-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+    }
+
+    #page-loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader-text {
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--vscode-descriptionForeground);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--vscode-widget-border, rgba(128,128,128,0.2));
+      border-top-color: var(--vscode-textLink-foreground);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
 
     .header {
@@ -176,6 +221,57 @@ function getWebviewContent(offWorkTime) {
       font-size: 12px;
     }
 
+    /* 加载动画 */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    .loading-dots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .loading-dots span {
+      width: 6px;
+      height: 6px;
+      background: var(--vscode-textLink-foreground);
+      border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    /* 隐藏元素 */
+    .hidden {
+      display: none !important;
+    }
+
+    /* 骨架屏 */
+    .skeleton {
+      background: linear-gradient(
+        90deg,
+        var(--vscode-widget-border, rgba(128,128,128,0.2)) 25%,
+        var(--vscode-list-hoverBackground, rgba(128,128,128,0.1)) 50%,
+        var(--vscode-widget-border, rgba(128,128,128,0.2)) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton-text {
+      height: 12px;
+      margin: 8px 0;
+    }
+
     .tip-content {
       font-size: 12px;
       line-height: 1.6;
@@ -184,10 +280,16 @@ function getWebviewContent(offWorkTime) {
 </style>
 </head>
 <body>
+  <!-- 页面加载指示器 -->
+  <div id="page-loader">
+    <div class="spinner"></div>
+    <div class="loader-text">正在加载摸鱼岛...</div>
+  </div>
+
   <div class="header">🐟 摸鱼岛</div>
 
   <!-- 倒计时卡片 -->
-  <div class="card">
+  <div class="card ${enableCountdown ? '' : 'hidden'}" id="countdown-card">
     <div class="card-title">⏰ 下班倒计时</div>
     <div class="countdown-display" id="countdown">--:--:--</div>
     <div class="countdown-label" id="countdown-label">加载中...</div>
@@ -200,18 +302,25 @@ function getWebviewContent(offWorkTime) {
   </div>
 
   <!-- 热榜卡片 -->
-  <div class="card">
+  <div class="card ${enableHotlist ? '' : 'hidden'}" id="hotlist-card">
     <div class="card-title">🔥 热榜</div>
     <div class="tabs" id="tabs"></div>
     <div class="hotlist" id="hotlist">
-      <div class="hotlist-empty">点击标签加载热榜</div>
+      <div class="hotlist-loading">
+        <span class="loading-dots">
+          <span></span><span></span><span></span>
+        </span>
+        点击标签加载热榜
+      </div>
     </div>
   </div>
 
   <!-- 摸鱼小贴士 -->
   <div class="card">
     <div class="card-title">💡 摸鱼小贴士</div>
-    <div class="tip-content" id="tip-content"></div>
+    <div class="tip-content" id="tip-content">
+      <div class="skeleton skeleton-text"></div>
+    </div>
   </div>
 
   <script>
@@ -220,7 +329,7 @@ function getWebviewContent(offWorkTime) {
     const WORK_START = '09:00';
 
     // 摸鱼小贴士
-    const tips = [
+    const defaultTips = [
       '摸鱼的最高境界：让老板以为你在加班，同事以为你在开会',
       '建议每工作25分钟，摸鱼5分钟，这叫番茄摸鱼法🍅',
       '打开一个终端窗口放在旁边，看起来就像在编译代码',
@@ -235,36 +344,57 @@ function getWebviewContent(offWorkTime) {
       '把摸鱼网站的标签页标题改成"技术文档"更安全'
     ];
 
-    // 显示随机小贴士
-    const tipEl = document.getElementById('tip-content');
-    tipEl.textContent = tips[Math.floor(Math.random() * tips.length)];
+    const tips = ${JSON.stringify(customTips.length > 0 ? customTips : null)} || defaultTips;
+
+    // 延迟加载非关键内容
+    function lazyLoad() {
+      // 显示随机小贴士
+      const tipEl = document.getElementById('tip-content');
+      setTimeout(() => {
+        tipEl.textContent = tips[Math.floor(Math.random() * tips.length)];
+      }, 100);
+
+      // 延迟渲染热榜标签
+      setTimeout(() => {
+        renderHotlistTabs();
+      }, 50);
+    }
 
     // 热榜标签
     const sources = [
       { key: 'zhihu', label: '知乎' },
       { key: 'weibo', label: '微博' },
       { key: 'bilibili', label: 'B站' },
-      { key: 'juejin', label: '掘金' }
+      { key: 'juejin', label: '掘金' },
+      { key: 'douyin', label: '抖音' },
+      { key: 'baidu', label: '百度' },
+      { key: 'hupu', label: '虎扑' },
+      { key: 'github', label: 'GitHub' },
+      { key: 'tieba', label: '贴吧' }
     ];
 
     let activeSource = '';
-    const tabsEl = document.getElementById('tabs');
     const hotlistEl = document.getElementById('hotlist');
 
-    sources.forEach(s => {
-      const tab = document.createElement('span');
-      tab.className = 'tab';
-      tab.textContent = s.label;
-      tab.dataset.source = s.key;
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        activeSource = s.key;
-        hotlistEl.innerHTML = '<div class="hotlist-loading">加载中...</div>';
-        vscode.postMessage({ type: 'fetchHotlist', source: s.key });
+    function renderHotlistTabs() {
+      const tabsEl = document.getElementById('tabs');
+      tabsEl.innerHTML = '';
+
+      sources.forEach(s => {
+        const tab = document.createElement('span');
+        tab.className = 'tab';
+        tab.textContent = s.label;
+        tab.dataset.source = s.key;
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          activeSource = s.key;
+          hotlistEl.innerHTML = '<div class="hotlist-loading"><span class="loading-dots"><span></span><span></span><span></span></span> 加载中...</div>';
+          vscode.postMessage({ type: 'fetchHotlist', source: s.key });
+        });
+        tabsEl.appendChild(tab);
       });
-      tabsEl.appendChild(tab);
-    });
+    }
 
     // 接收 extension 消息
     window.addEventListener('message', event => {
@@ -382,8 +512,22 @@ function getWebviewContent(offWorkTime) {
       progressTextEl.textContent = '今日进度 ' + progress + '%';
     }
 
+    // 初始化
     updateCountdown();
     setInterval(updateCountdown, 1000);
+
+    // 延迟加载非关键内容，然后隐藏加载器
+    document.addEventListener('DOMContentLoaded', () => {
+      lazyLoad();
+
+      // 所有关键内容加载完成后隐藏加载器
+      setTimeout(() => {
+        const loader = document.getElementById('page-loader');
+        if (loader) {
+          loader.classList.add('hidden');
+        }
+      }, 300);
+    });
   </script>
 </body>
 </html>`;

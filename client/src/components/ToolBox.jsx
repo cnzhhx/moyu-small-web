@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Diff from 'diff';
 import ReactMarkdown from 'react-markdown';
 import QRCode from 'qrcode';
 import { useTheme } from '../ThemeContext.jsx';
+
+const SEARCH_HISTORY_KEY = 'moyu-tool-search-history';
+const MAX_HISTORY = 10;
 
 // ─── Shared style builders ───
 const getStyles = (colors) => ({
@@ -775,41 +778,157 @@ const TOOLS = [
 // ═══════════════════════════════════════════════════
 // Main ToolBox component
 // ═══════════════════════════════════════════════════
-export default function ToolBox() {
+export default function ToolBox({ searchOpen, onSearchChange }) {
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [activeTool, setActiveTool] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(-1);
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY)) || []; }
+    catch { return []; }
+  });
+  const [showHistory, setShowHistory] = useState(false);
+  const searchInputRef = useRef(null);
+  const historyRef = useRef(null);
+
+  // 保存搜索历史
+  const saveHistory = useCallback((term) => {
+    if (!term.trim()) return;
+    const newHistory = [term.trim(), ...history.filter(h => h !== term.trim())].slice(0, MAX_HISTORY);
+    setHistory(newHistory);
+    try { localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory)); }
+    catch {}
+  }, [history]);
+
+  // 清空历史
+  const clearHistory = () => {
+    setHistory([]);
+    try { localStorage.removeItem(SEARCH_HISTORY_KEY); }
+    catch {}
+  };
+
+  // 从历史选择
+  const selectFromHistory = (term) => {
+    setSearch(term);
+    setShowHistory(false);
+  };
 
   const filtered = TOOLS.filter(t =>
     t.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // 监听全局搜索触发
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+      onSearchChange?.(false);
+    }
+  }, [searchOpen, onSearchChange]);
+
+  // 监听 ESC 关闭弹窗和历史
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setActiveTool(null);
+        setShowHistory(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // 点击外部关闭历史
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (historyRef.current && !historyRef.current.contains(e.target) &&
+          searchInputRef.current && !searchInputRef.current.contains(e.target)) {
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 输入框回车保存历史
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter' && search.trim()) {
+      saveHistory(search.trim());
+      setShowHistory(false);
+    }
+  };
 
   return (
     <div>
       {/* Search bar */}
       <div style={{
         position: 'relative', marginBottom: 20,
-      }}>
+      }} ref={historyRef}>
         <span style={{
           position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
           fontSize: 16, pointerEvents: 'none',
         }}>🔍</span>
         <input
+          ref={searchInputRef}
           type="text"
-          placeholder="搜索工具..."
+          placeholder="搜索工具... (Ctrl+K)"
           value={search}
           onChange={e => setSearch(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+          onFocus={() => history.length > 0 && setShowHistory(true)}
           style={{
-            width: '100%', padding: '12px 12px 12px 40px',
+            width: '100%', padding: '12px 80px 12px 40px',
             background: colors.cardBg, border: `1px solid ${colors.border}`,
             borderRadius: 10, color: colors.text, fontSize: 15,
             outline: 'none', boxSizing: 'border-box',
             transition: 'border-color 0.2s',
           }}
-          onFocus={e => e.target.style.borderColor = colors.accent}
-          onBlur={e => e.target.style.borderColor = colors.border}
         />
+        <span style={{
+          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 11, color: colors.textMuted, pointerEvents: 'none',
+          background: colors.inputBg, padding: '2px 6px', borderRadius: 4,
+          border: `1px solid ${colors.border}`,
+        }}>Ctrl+K</span>
+
+        {/* 搜索历史下拉 */}
+        {showHistory && history.length > 0 && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 6,
+            background: colors.cardBg, border: `1px solid ${colors.border}`,
+            borderRadius: 10, boxShadow: `0 4px 16px ${colors.shadow}`,
+            zIndex: 100, overflow: 'hidden',
+          }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '8px 12px', borderBottom: `1px solid ${colors.border}`,
+            }}>
+              <span style={{ fontSize: 12, color: colors.textSecondary }}>搜索历史</span>
+              <button
+                onClick={clearHistory}
+                style={{
+                  fontSize: 11, color: colors.accent, background: 'transparent',
+                  border: 'none', cursor: 'pointer', padding: '2px 6px',
+                }}
+              >清空</button>
+            </div>
+            {history.map((term, idx) => (
+              <div
+                key={idx}
+                onClick={() => selectFromHistory(term)}
+                style={{
+                  padding: '10px 14px', cursor: 'pointer', fontSize: 14,
+                  color: colors.text, display: 'flex', alignItems: 'center', gap: 8,
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = colors.hover}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <span style={{ color: colors.textMuted }}>🕐</span>
+                <span style={{ flex: 1 }}>{term}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tool cards grid */}

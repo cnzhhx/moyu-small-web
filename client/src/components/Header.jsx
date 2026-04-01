@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from '../ThemeContext.jsx'
 import Countdown from './Countdown.jsx'
 
-export default function Header() {
+export default function Header({ onShowShortcuts }) {
   const { colors } = useTheme()
   const [sentence, setSentence] = useState('')
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -97,7 +97,7 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Right: Countdown + Holiday + Clock */}
+      {/* Right: Countdown + Holiday + Clock + Shortcuts */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 14,
         fontSize: 13, color: colors.textSecondary, whiteSpace: 'nowrap', flexShrink: 0,
@@ -112,6 +112,22 @@ export default function Header() {
             距 {holiday.name} 还有 {holiday.days} 天
           </span>
         )}
+        <button
+          onClick={onShowShortcuts}
+          style={{
+            background: 'transparent', border: `1px solid ${colors.border}`,
+            color: colors.textSecondary, fontSize: 12,
+            padding: '4px 8px', borderRadius: 6, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 4,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.color = colors.accent }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.color = colors.textSecondary }}
+          title="查看快捷键"
+        >
+          <span>⌨️</span>
+          <span>?</span>
+        </button>
         <span style={{ color: colors.textSecondary }}>🕐 {timeStr}</span>
       </div>
     </header>
