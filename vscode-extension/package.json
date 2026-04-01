@@ -1,0 +1,57 @@
+{
+  "name": "moyu-island",
+  "displayName": "摸鱼岛",
+  "description": "上班摸鱼神器 - 热榜聚合、下班倒计时、每日一言",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "moyuIsland.showPanel",
+        "title": "摸鱼岛：打开面板"
+      },
+      {
+        "command": "moyuIsland.openWebsite",
+        "title": "摸鱼岛：打开摸鱼网站"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "moyu-island",
+          "title": "摸鱼岛",
+          "icon": "$(smiley)"
+        }
+      ]
+    },
+    "views": {
+      "moyu-island": [
+        {
+          "type": "webview",
+          "id": "moyuIsland.mainView",
+          "name": "摸鱼岛"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "摸鱼岛",
+      "properties": {
+        "moyuIsland.offWorkTime": {
+          "type": "string",
+          "default": "18:00",
+          "description": "下班时间（HH:mm格式）"
+        },
+        "moyuIsland.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:3001",
+          "description": "摸鱼岛后端服务地址"
+        }
+      }
+    }
+  }
+}
