@@ -4,6 +4,105 @@ import { useToast } from '../App.jsx'
 
 const STORAGE_KEY = 'moyu-todos'
 
+// SVG Icons - Retro-Futurism Style
+const Icons = {
+  clipboard: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+    </svg>
+  ),
+  upload: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="17,8 12,3 7,8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  ),
+  download: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="7,10 12,15 17,10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+  ),
+  csv: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <polyline points="14,2 14,8 20,8"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="16" y2="17"/>
+    </svg>
+  ),
+  trash: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3,6 5,6 21,6"/>
+      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+      <line x1="10" y1="11" x2="10" y2="17"/>
+      <line x1="14" y1="11" x2="14" y2="17"/>
+    </svg>
+  ),
+  arrowUp: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="18,15 12,9 6,15"/>
+    </svg>
+  ),
+  arrowDown: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6,9 12,15 18,9"/>
+    </svg>
+  ),
+  check: (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  sparkles: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2L13.09 8.26L18 6L14.74 10.91L21 12L14.74 13.09L18 18L13.09 15.74L12 22L10.91 15.74L6 18L9.26 13.09L3 12L9.26 10.91L6 6L10.91 8.26L12 2Z"/>
+    </svg>
+  ),
+  trophy: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 15a7 7 0 007-7V4H5v4a7 7 0 007 7zm-2 4h4v2h-4v-2zm-4-2h10v2H6v-2z"/>
+    </svg>
+  ),
+  rocket: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C8 6 8 12 8 12s0 6 4 10c4-4 4-10 4-10s0-6-4-10zm0 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+    </svg>
+  ),
+  fire: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 23c-3.866 0-7-2.239-7-5 0-1.636.785-3.088 2-4.018V6c0-2.21 1.79-4 4-4s4 1.79 4 4v7.982c1.215.93 2 2.382 2 4.018 0 2.761-3.134 5-7 5z"/>
+    </svg>
+  ),
+  fish: (
+    <svg width="32" height="32" viewBox="0 0 64 64" fill="currentColor">
+      <ellipse cx="32" cy="32" rx="20" ry="14"/>
+      <circle cx="44" cy="30" r="3" fill="#0F172A"/>
+      <path d="M12 32c-6-4-6-12 0-16" fill="none" stroke="currentColor" strokeWidth="3"/>
+    </svg>
+  ),
+  folder: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+    </svg>
+  ),
+  close: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
+  plus: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  ),
+}
+
 function loadTodos() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -31,19 +130,19 @@ function relativeTime(ts) {
 }
 
 const PRIORITY_META = {
-  high: { color: '#ef4444', label: '高', emoji: '🔴' },
-  medium: { color: '#eab308', label: '中', emoji: '🟡' },
-  low: { color: '#22c55e', label: '低', emoji: '🟢' },
+  high: { color: '#EF4444', label: '高', gradient: 'linear-gradient(135deg, #EF4444, #DC2626)' },
+  medium: { color: '#F59E0B', label: '中', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)' },
+  low: { color: '#22C55E', label: '低', gradient: 'linear-gradient(135deg, #22C55E, #16A34A)' },
 }
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
 
 function getMotivation(rate) {
-  if (rate === 0) return '新的一天，从第一个任务开始吧 💪'
-  if (rate < 0.3) return '才刚开始，继续加油 🚀'
-  if (rate < 0.6) return '进度不错，保持节奏 🎯'
-  if (rate < 1) return '快完成了，冲刺一下 🔥'
-  return '全部搞定！今天的你超棒 🏆'
+  if (rate === 0) return { text: '新的一天，从第一个任务开始吧', icon: Icons.sparkles }
+  if (rate < 0.3) return { text: '才刚开始，继续加油', icon: Icons.rocket }
+  if (rate < 0.6) return { text: '进度不错，保持节奏', icon: Icons.sparkles }
+  if (rate < 1) return { text: '快完成了，冲刺一下', icon: Icons.fire }
+  return { text: '全部搞定！今天的你超棒', icon: Icons.trophy }
 }
 
 const fishKeyframes = `
@@ -54,6 +153,10 @@ const fishKeyframes = `
 @keyframes progressFill {
   from { width: 0%; }
 }
+@keyframes progressGlow {
+  0%, 100% { box-shadow: 0 0 4px rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(34, 197, 94, 0.6); }
+}
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -62,6 +165,18 @@ const fishKeyframes = `
   0% { transform: scale(0.8); }
   50% { transform: scale(1.15); }
   100% { transform: scale(1); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 `
 
@@ -298,15 +413,35 @@ export default function TodoList() {
     { key: 'done', label: '已完成' },
   ]
 
-  // Empty state illustrations
+  // Empty state illustrations - Retro-Futurism style
   const EmptyStateIllustration = () => (
-    <svg width="120" height="100" viewBox="0 0 120 100" fill="none" style={{ marginBottom: 16 }}>
-      <circle cx="60" cy="50" r="35" fill={colors.accentLight} opacity="0.5" />
-      <rect x="35" y="45" width="50" height="6" rx="3" fill={colors.border} />
-      <rect x="40" y="55" width="40" height="6" rx="3" fill={colors.border} />
-      <circle cx="45" cy="35" r="6" fill={colors.accent} opacity="0.6" />
-      <circle cx="75" cy="35" r="6" fill={colors.accent} opacity="0.6" />
-      <path d="M50 65Q60 72 70 65" stroke={colors.accent} strokeWidth="3" strokeLinecap="round" fill="none" />
+    <svg width="140" height="110" viewBox="0 0 140 110" fill="none" style={{ marginBottom: 20 }}>
+      {/* Background glow */}
+      <circle cx="70" cy="55" r="45" fill={colors.accentLight} opacity="0.3"/>
+      <circle cx="70" cy="55" r="35" fill={colors.accentLight} opacity="0.5"/>
+
+      {/* Clipboard body */}
+      <rect x="40" y="30" width="60" height="70" rx="8" fill={colors.cardBg} stroke={colors.accent} strokeWidth="2"/>
+
+      {/* Clipboard clip */}
+      <rect x="55" y="22" width="30" height="12" rx="4" fill={colors.accent}/>
+
+      {/* Lines on clipboard */}
+      <rect x="52" y="48" width="36" height="4" rx="2" fill={colors.border}/>
+      <rect x="52" y="58" width="28" height="4" rx="2" fill={colors.border}/>
+      <rect x="52" y="68" width="32" height="4" rx="2" fill={colors.border}/>
+      <rect x="52" y="78" width="20" height="4" rx="2" fill={colors.border}/>
+
+      {/* Decorative elements */}
+      <circle cx="30" cy="35" r="4" fill={colors.accent} opacity="0.6">
+        <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="110" cy="45" r="3" fill={colors.accent} opacity="0.4">
+        <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="115" cy="75" r="5" fill={colors.accentLight} opacity="0.5">
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="3s" repeatCount="indefinite"/>
+      </circle>
     </svg>
   )
 
@@ -316,20 +451,29 @@ export default function TodoList() {
       return (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: colors.textMuted }}>
           <EmptyStateIllustration />
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: colors.text }}>暂无待办任务</div>
-          <div style={{ fontSize: 14, marginBottom: 20 }}>开始规划你的一天吧 ✨</div>
+          <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: colors.text }}>暂无待办任务</div>
+          <div style={{ fontSize: 14, marginBottom: 20, color: colors.textSecondary }}>开始规划你的一天吧</div>
           <button
             onClick={() => document.querySelector('input[placeholder*="做什么"]').focus()}
             style={{
-              padding: '10px 24px', borderRadius: 20, border: 'none',
-              background: colors.accent, color: '#fff', fontSize: 14,
-              fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
-              boxShadow: `0 2px 8px ${colors.accent}40`,
+              padding: '12px 28px', borderRadius: 24, border: 'none',
+              background: `linear-gradient(135deg, ${colors.accent}, ${colors.accent}dd)`,
+              color: '#fff', fontSize: 14,
+              fontWeight: 600, cursor: 'pointer', transition: 'all 0.25s ease',
+              boxShadow: `0 2px 12px ${colors.accent}40`,
+              display: 'inline-flex', alignItems: 'center', gap: 8,
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = `0 4px 12px ${colors.accent}60` }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 2px 8px ${colors.accent}40` }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = `0 6px 20px ${colors.accent}60`
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = `0 2px 12px ${colors.accent}40`
+            }}
           >
-            + 添加第一个任务
+            {Icons.plus}
+            <span>添加第一个任务</span>
           </button>
         </div>
       )
@@ -337,16 +481,27 @@ export default function TodoList() {
     if (filter === 'done' && doneCount === 0) {
       return (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: colors.textMuted, fontSize: 14 }}>
-          还没有完成的任务哦，加油 💪
+          <div style={{ color: colors.accent, marginBottom: 12, opacity: 0.6 }}>{Icons.clipboard}</div>
+          <div style={{ color: colors.textSecondary }}>还没有完成的任务哦，加油</div>
         </div>
       )
     }
     if (filter === 'active' && activeCount === 0) {
       return (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: colors.textMuted }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
-          <div style={{ fontSize: 15 }}>所有任务已完成！奖励自己摸会儿鱼吧</div>
-          <div style={{ fontSize: 32, marginTop: 8, animation: 'fishFloat 2.5s ease-in-out infinite' }}>🐟</div>
+          <div style={{
+            color: colors.accent,
+            marginBottom: 12,
+            animation: 'bounce 1s ease-in-out infinite',
+          }}>
+            <svg width="40" height="40" viewBox="0 0 64 64" fill="currentColor">
+              <ellipse cx="32" cy="32" rx="24" ry="16"/>
+              <circle cx="46" cy="29" r="4" fill={colors.cardBg}/>
+              <path d="M8 32c-8-6-8-16 0-22" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: colors.textSecondary }}>所有任务已完成！</div>
+          <div style={{ fontSize: 13, marginTop: 4, opacity: 0.7 }}>奖励自己摸会儿鱼吧</div>
         </div>
       )
     }
@@ -415,11 +570,17 @@ export default function TodoList() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: colors.text }}>📋 每日待办</span>
+              <span style={{
+                fontSize: 18, fontWeight: 700, color: colors.text,
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <span style={{ color: colors.accent }}>{Icons.clipboard}</span>
+                每日待办
+              </span>
               {total > 0 && (
                 <span style={{
                   fontSize: 11, fontWeight: 600, background: colors.accentLight,
-                  color: colors.accent, padding: '2px 8px', borderRadius: 10,
+                  color: colors.accent, padding: '3px 10px', borderRadius: 12,
                 }}>
                   {total}
                 </span>
@@ -429,53 +590,64 @@ export default function TodoList() {
               <button
                 onClick={openImportModal}
                 style={{
-                  padding: '5px 10px', borderRadius: 6,
+                  padding: '6px 12px', borderRadius: 8,
                   border: `1px solid ${colors.border}`, background: 'transparent',
                   color: colors.textSecondary, cursor: 'pointer', fontSize: 11,
-                  transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 4,
+                  transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: 4,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.color = colors.accent }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.color = colors.textSecondary }}
                 title="导入数据"
               >
-                <span>⬆️</span> 导入
+                {Icons.upload}
+                <span>导入</span>
               </button>
               {total > 0 && (
                 <>
                   <button
                     onClick={() => exportTodos('json')}
                     style={{
-                      padding: '5px 10px', borderRadius: 6,
+                      padding: '6px 12px', borderRadius: 8,
                       border: `1px solid ${colors.border}`, background: 'transparent',
                       color: colors.textSecondary, cursor: 'pointer', fontSize: 11,
-                      transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 4,
+                      transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: 4,
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.color = colors.accent }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.color = colors.textSecondary }}
                     title="导出为 JSON"
                   >
-                    <span>⬇️</span> JSON
+                    {Icons.download}
+                    <span>JSON</span>
                   </button>
                   <button
                     onClick={() => exportTodos('csv')}
                     style={{
-                      padding: '5px 10px', borderRadius: 6,
+                      padding: '6px 12px', borderRadius: 8,
                       border: `1px solid ${colors.border}`, background: 'transparent',
                       color: colors.textSecondary, cursor: 'pointer', fontSize: 11,
-                      transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 4,
+                      transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: 4,
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.color = colors.accent }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.color = colors.textSecondary }}
                     title="导出为 CSV"
                   >
-                    <span>📊</span> CSV
+                    {Icons.csv}
+                    <span>CSV</span>
                   </button>
                 </>
               )}
             </div>
           </div>
-          <div style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-            {getMotivation(completionRate)}
+          <div style={{
+            fontSize: 12, color: colors.textMuted, marginTop: 2,
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            {getMotivation(completionRate).icon && (
+              <span style={{ color: colors.accent, opacity: 0.7 }}>
+                {getMotivation(completionRate).icon}
+              </span>
+            )}
+            <span>{getMotivation(completionRate).text}</span>
           </div>
         </div>
 
@@ -498,40 +670,47 @@ export default function TodoList() {
             />
             <button
               style={{
-                padding: '9px 18px', borderRadius: 10, border: 'none',
-                background: colors.accent, color: '#fff', fontSize: 14,
+                padding: '10px 20px', borderRadius: 12, border: 'none',
+                background: `linear-gradient(135deg, ${colors.accent}, ${colors.accent}dd)`,
+                color: '#fff', fontSize: 14,
                 fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-                transition: 'opacity 0.2s, transform 0.15s',
+                transition: 'all 0.2s ease',
                 opacity: input.trim() ? 1 : 0.6,
+                boxShadow: input.trim() ? `0 2px 10px ${colors.accent}40` : 'none',
               }}
               onClick={addTodo}
               onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.96)' }}
               onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)' }}
+              onMouseEnter={e => { if (input.trim()) e.currentTarget.style.boxShadow = `0 4px 14px ${colors.accent}60` }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = `0 2px 10px ${colors.accent}40` }}
             >
               添加
             </button>
           </div>
-          {/* Priority selector */}
-          <div style={{ display: 'flex', gap: 6, marginTop: 10, alignItems: 'center' }}>
+          {/* Priority selector - enhanced */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center' }}>
             <span style={{ fontSize: 12, color: colors.textMuted, marginRight: 4 }}>优先级</span>
             {Object.entries(PRIORITY_META).map(([key, meta]) => (
               <button
                 key={key}
                 onClick={() => setPriority(key)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  padding: '3px 10px', borderRadius: 12, border: 'none',
-                  background: priority === key ? `${meta.color}22` : 'transparent',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '5px 12px', borderRadius: 14, border: 'none',
+                  background: priority === key ? `${meta.color}18` : 'transparent',
                   color: priority === key ? meta.color : colors.textMuted,
                   cursor: 'pointer', fontSize: 12, fontWeight: priority === key ? 600 : 400,
-                  transition: 'all 0.2s',
-                  outline: priority === key ? `2px solid ${meta.color}44` : '2px solid transparent',
+                  transition: 'all 0.2s ease',
+                  outline: priority === key ? `2px solid ${meta.color}40` : '2px solid transparent',
                 }}
               >
                 <span style={{
-                  width: 8, height: 8, borderRadius: '50%', background: meta.color,
-                  display: 'inline-block', opacity: priority === key ? 1 : 0.4,
-                  transition: 'opacity 0.2s',
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: meta.gradient,
+                  display: 'inline-block',
+                  opacity: priority === key ? 1 : 0.5,
+                  transition: 'opacity 0.2s ease',
+                  boxShadow: priority === key ? `0 0 6px ${meta.color}60` : 'none',
                 }} />
                 {meta.label}
               </button>
@@ -541,22 +720,27 @@ export default function TodoList() {
 
         {/* ===== PROGRESS BAR ===== */}
         {total > 0 && (
-          <div style={{ padding: '12px 20px 8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div style={{ padding: '14px 20px 10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, color: colors.textSecondary, fontWeight: 500 }}>
                 已完成 {doneCount}/{total} ({pct}%)
               </span>
             </div>
             <div style={{
-              height: 6, borderRadius: 3, background: colors.border,
-              overflow: 'hidden', transition: 'background 0.3s',
+              height: 8,
+              borderRadius: 4,
+              background: colors.border,
+              overflow: 'hidden',
+              transition: 'background 0.3s',
             }}>
               <div style={{
-                height: '100%', borderRadius: 3,
-                background: `linear-gradient(90deg, ${colors.accent}, ${colors.accent}cc)`,
+                height: '100%',
+                borderRadius: 4,
+                background: `linear-gradient(90deg, ${colors.accent}, #4ADE80)`,
                 width: `${pct}%`,
-                transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                animation: 'progressFill 0.8s ease-out',
+                transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                animation: pct > 0 ? 'progressFill 0.8s ease-out, progressGlow 2s ease-in-out infinite' : 'none',
+                boxShadow: `0 0 8px ${colors.accent}50`,
               }} />
             </div>
           </div>
@@ -613,7 +797,7 @@ export default function TodoList() {
         {/* ===== TODO LIST ===== */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
           {filtered.length === 0 ? renderEmpty() : (
-            filtered.map(todo => {
+            filtered.map((todo, idx) => {
               const isHovered = hoveredId === todo.id
               const isDragged = draggedId === todo.id
               const isDragOver = dragOverId === todo.id
@@ -628,91 +812,92 @@ export default function TodoList() {
                   onDrop={(e) => handleDrop(e, todo.id)}
                   onDragEnd={handleDragEnd}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 20px', transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 20px',
+                    transition: 'all 0.2s ease',
                     background: isDragOver ? colors.accentLight : (isHovered ? colors.hover : 'transparent'),
-                    opacity: isDragged ? 0.5 : 1,
-                    transform: isDragged ? 'scale(0.98)' : 'none',
+                    opacity: isDragged ? 0.4 : 1,
+                    transform: isDragged ? 'scale(0.96) rotate(1deg)' : 'none',
                     borderTop: isDragOver ? `2px solid ${colors.accent}` : '2px solid transparent',
-                    cursor: 'move',
-                    animation: 'fadeIn 0.25s ease-out',
+                    cursor: 'grab',
+                    animation: `slideIn 0.3s ease-out ${idx * 0.03}s both`,
                   }}
                   onMouseEnter={() => setHoveredId(todo.id)}
                   onMouseLeave={() => { setHoveredId(null); setHoveredBtn(null) }}
                 >
-                  {/* Priority dot */}
+                  {/* Priority indicator - enhanced */}
                   <span style={{
-                    width: 7, height: 7, borderRadius: '50%', background: pm.color,
-                    flexShrink: 0, opacity: todo.done ? 0.3 : 0.85,
-                    transition: 'opacity 0.2s',
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: pm.gradient,
+                    flexShrink: 0,
+                    opacity: todo.done ? 0.3 : 1,
+                    transition: 'all 0.2s ease',
+                    boxShadow: todo.done ? 'none' : `0 0 6px ${pm.color}60`,
                   }} />
 
-                  {/* Custom checkbox */}
+                  {/* Custom checkbox - enhanced */}
                   <button
                     onClick={() => toggleTodo(todo.id)}
                     style={{
-                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                       border: todo.done ? `2px solid ${colors.accent}` : `2px solid ${colors.border}`,
-                      background: todo.done ? colors.accent : 'transparent',
+                      background: todo.done ? `linear-gradient(135deg, ${colors.accent}, #4ADE80)` : 'transparent',
                       cursor: 'pointer', display: 'flex', alignItems: 'center',
                       justifyContent: 'center', padding: 0,
-                      transition: 'all 0.2s',
-                      animation: todo.done ? 'checkPop 0.25s ease-out' : 'none',
+                      transition: 'all 0.25s ease',
+                      animation: todo.done ? 'checkPop 0.3s ease-out' : 'none',
+                      boxShadow: todo.done ? `0 0 8px ${colors.accent}50` : 'none',
                     }}
                   >
-                    {todo.done && (
-                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
+                    {todo.done && Icons.check}
                   </button>
 
                   {/* Text + time */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontSize: 14, color: colors.text, lineHeight: 1.4,
+                      fontSize: 14, color: colors.text, lineHeight: 1.5,
                       textDecoration: todo.done ? 'line-through' : 'none',
                       opacity: todo.done ? 0.4 : 1,
-                      transition: 'opacity 0.3s',
+                      transition: 'opacity 0.3s ease',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {todo.text}
                     </div>
-                    <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>
                       {relativeTime(todo.createdAt || todo.id)}
                     </div>
                   </div>
 
-                  {/* Action buttons - hover only */}
+                  {/* Action buttons - enhanced */}
                   <div style={{
-                    display: 'flex', gap: 2,
+                    display: 'flex', gap: 4,
                     opacity: isHovered ? 1 : 0,
-                    transition: 'opacity 0.2s',
+                    transition: 'opacity 0.2s ease',
                     pointerEvents: isHovered ? 'auto' : 'none',
                   }}>
                     {[
-                      { label: '↑', title: '上移', action: () => moveItem(todo.id, -1) },
-                      { label: '↓', title: '下移', action: () => moveItem(todo.id, 1) },
-                      { label: '🗑', title: '删除', action: () => deleteTodo(todo.id) },
+                      { icon: Icons.arrowUp, title: '上移', action: () => moveItem(todo.id, -1), key: 'up' },
+                      { icon: Icons.arrowDown, title: '下移', action: () => moveItem(todo.id, 1), key: 'down' },
+                      { icon: Icons.trash, title: '删除', action: () => deleteTodo(todo.id), key: 'delete' },
                     ].map(btn => {
-                      const bKey = `${todo.id}-${btn.label}`
+                      const bKey = `${todo.id}-${btn.key}`
                       return (
                         <button
-                          key={btn.label}
+                          key={btn.key}
                           title={btn.title}
                           onClick={btn.action}
                           onMouseEnter={() => setHoveredBtn(bKey)}
                           onMouseLeave={() => setHoveredBtn(null)}
                           style={{
-                            width: 26, height: 26, borderRadius: 6, border: 'none',
+                            width: 28, height: 28, borderRadius: 8, border: 'none',
                             background: hoveredBtn === bKey ? colors.accentLight : 'transparent',
                             color: hoveredBtn === bKey ? colors.accent : colors.textMuted,
-                            cursor: 'pointer', fontSize: btn.label === '🗑' ? 13 : 14,
+                            cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            padding: 0, transition: 'all 0.15s',
+                            padding: 0, transition: 'all 0.15s ease',
                           }}
                         >
-                          {btn.label}
+                          {btn.icon}
                         </button>
                       )
                     })}
@@ -726,11 +911,16 @@ export default function TodoList() {
         {/* ===== STATISTICS FOOTER ===== */}
         {total > 0 && (
           <div style={{
-            padding: '10px 20px', borderTop: `1px solid ${colors.border}`,
+            padding: '12px 20px', borderTop: `1px solid ${colors.border}`,
             fontSize: 12, color: colors.textMuted, textAlign: 'center',
             transition: 'color 0.3s, border-color 0.3s',
+            display: 'flex', justifyContent: 'center', gap: 16,
           }}>
-            今日完成 {doneCount} 项 | 剩余 {activeCount} 项 | 效率 {pct}%
+            <span>今日完成 <strong style={{ color: colors.accent }}>{doneCount}</strong> 项</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span>剩余 <strong style={{ color: colors.textSecondary }}>{activeCount}</strong> 项</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span>效率 <strong style={{ color: pct >= 80 ? colors.accent : colors.textSecondary }}>{pct}%</strong></span>
           </div>
         )}
       </div>
@@ -739,59 +929,72 @@ export default function TodoList() {
       {showImportModal && (
         <div
           style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, backdropFilter: 'blur(4px)',
+            zIndex: 1000, backdropFilter: 'blur(6px)',
           }}
           onClick={() => setShowImportModal(false)}
         >
           <div
             style={{
-              background: colors.cardBg, borderRadius: 16,
+              background: colors.cardBg, borderRadius: 20,
               border: `1px solid ${colors.border}`, width: '90%', maxWidth: 500,
-              maxHeight: '80vh', overflow: 'auto', padding: 24,
-              boxShadow: `0 8px 32px ${colors.shadow}`,
+              maxHeight: '80vh', overflow: 'auto', padding: 28,
+              boxShadow: `0 12px 40px ${colors.shadow}`,
+              animation: 'fadeIn 0.25s ease-out',
             }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, color: colors.text, fontSize: 18 }}>📥 导入任务</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{
+                margin: 0, color: colors.text, fontSize: 18,
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <span style={{ color: colors.accent }}>{Icons.upload}</span>
+                导入任务
+              </h3>
               <button
                 onClick={() => setShowImportModal(false)}
                 style={{
-                  background: 'transparent', border: 'none', color: colors.textSecondary,
-                  cursor: 'pointer', fontSize: 20, padding: '0 4px',
+                  background: colors.hover, border: 'none', color: colors.textSecondary,
+                  cursor: 'pointer', padding: '6px',
+                  borderRadius: 8, transition: 'all 0.2s ease',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
-              >✕</button>
+                onMouseEnter={e => { e.currentTarget.style.background = colors.accentLight; e.currentTarget.style.color = colors.accent }}
+                onMouseLeave={e => { e.currentTarget.style.background = colors.hover; e.currentTarget.style.color = colors.textSecondary }}
+              >
+                {Icons.close}
+              </button>
             </div>
 
             {/* 导入模式选择 */}
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 18 }}>
               <span style={{ fontSize: 13, color: colors.textSecondary, marginRight: 12 }}>导入模式：</span>
-              <label style={{ marginRight: 16, cursor: 'pointer' }}>
+              <label style={{ marginRight: 16, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <input
                   type="radio"
                   value="merge"
                   checked={importMode === 'merge'}
                   onChange={() => setImportMode('merge')}
-                  style={{ accentColor: colors.accent, marginRight: 6 }}
+                  style={{ accentColor: colors.accent }}
                 />
                 <span style={{ fontSize: 13, color: colors.text }}>合并到现有</span>
               </label>
-              <label style={{ cursor: 'pointer' }}>
+              <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <input
                   type="radio"
                   value="replace"
                   checked={importMode === 'replace'}
                   onChange={() => setImportMode('replace')}
-                  style={{ accentColor: colors.accent, marginRight: 6 }}
+                  style={{ accentColor: colors.accent }}
                 />
                 <span style={{ fontSize: 13, color: colors.text }}>覆盖现有</span>
               </label>
             </div>
 
             {/* 文件上传 */}
-            <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 14 }}>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -802,13 +1005,17 @@ export default function TodoList() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 style={{
-                  padding: '8px 16px', borderRadius: 8,
+                  padding: '12px 18px', borderRadius: 12,
                   border: `1px dashed ${colors.border}`, background: colors.inputBg,
                   color: colors.textSecondary, cursor: 'pointer', fontSize: 13,
-                  width: '100%', marginBottom: 12,
+                  width: '100%', transition: 'all 0.2s ease',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.color = colors.accent }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.color = colors.textSecondary }}
               >
-                📁 选择 JSON 或 CSV 文件
+                {Icons.folder}
+                <span>选择 JSON 或 CSV 文件</span>
               </button>
             </div>
 
@@ -818,38 +1025,56 @@ export default function TodoList() {
               onChange={e => setImportText(e.target.value)}
               placeholder="或在此粘贴 JSON/CSV 数据..."
               style={{
-                width: '100%', minHeight: 150, padding: 12,
+                width: '100%', minHeight: 150, padding: 14,
                 background: colors.inputBg, border: `1px solid ${colors.border}`,
-                borderRadius: 8, color: colors.text, fontSize: 13,
+                borderRadius: 12, color: colors.text, fontSize: 13,
                 fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box',
-                outline: 'none',
+                outline: 'none', transition: 'border-color 0.2s ease',
               }}
+              onFocus={e => { e.target.style.borderColor = colors.accent }}
+              onBlur={e => { e.target.style.borderColor = colors.border }}
             />
 
             {/* 错误提示 */}
             {importError && (
-              <div style={{ color: colors.accent, fontSize: 12, marginTop: 8 }}>
-                ⚠️ {importError}
+              <div style={{
+                color: '#EF4444', fontSize: 12, marginTop: 10,
+                padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)',
+                borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                {importError}
               </div>
             )}
 
             {/* 操作按钮 */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowImportModal(false)}
                 style={{
-                  padding: '10px 20px', borderRadius: 8,
+                  padding: '10px 22px', borderRadius: 10,
                   border: `1px solid ${colors.border}`, background: 'transparent',
                   color: colors.textSecondary, cursor: 'pointer', fontSize: 14,
+                  transition: 'all 0.2s ease',
                 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.color = colors.accent }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.color = colors.textSecondary }}
               >取消</button>
               <button
                 onClick={handleImport}
                 style={{
-                  padding: '10px 24px', borderRadius: 8,
-                  border: 'none', background: colors.accent, color: '#fff',
-                  cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                  padding: '10px 28px', borderRadius: 10,
+                  border: 'none', background: `linear-gradient(135deg, ${colors.accent}, ${colors.accent}dd)`,
+                  color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                  transition: 'all 0.2s ease',
+                  boxShadow: `0 2px 10px ${colors.accent}40`,
                 }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 4px 14px ${colors.accent}50` }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 2px 10px ${colors.accent}40` }}
               >导入</button>
             </div>
           </div>

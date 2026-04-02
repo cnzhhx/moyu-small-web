@@ -1,6 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../ThemeContext.jsx'
 
+// SVG Icons
+const RunIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="5" r="2"/>
+    <path d="M4 17l3-3 3 3M15 17l3-3 3 3"/>
+    <path d="M12 7v10"/>
+  </svg>
+)
+
+const CheckCircleIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22,4 12,14.01 9,11.01"/>
+  </svg>
+)
+
 export default function Countdown() {
   const { colors } = useTheme()
   const [display, setDisplay] = useState('')
@@ -45,18 +61,55 @@ export default function Countdown() {
 
   if (isOffWork) {
     return (
-      <span style={{ fontWeight: 600, color: colors.accent }}>
-        🎉 已下班！
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontWeight: 600,
+        color: '#22C55E',
+        padding: '4px 12px',
+        background: 'rgba(34, 197, 94, 0.15)',
+        borderRadius: 20,
+      }}>
+        <CheckCircleIcon />
+        <span>已下班！</span>
       </span>
     )
   }
 
   return (
-    <span style={{ fontWeight: 600 }}>
-      <span style={{ color: colors.textSecondary }}>🏃 下班 </span>
-      <span style={{ color: colors.accent }}>{display}</span>
-      <span style={{ color: colors.textSecondary }}> | 进度 </span>
-      <span style={{ color: colors.accent }}>{progress}%</span>
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 8,
+      fontWeight: 500,
+      fontSize: 13,
+    }}>
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        color: colors.textSecondary,
+      }}>
+        <RunIcon />
+        <span>下班</span>
+      </span>
+      <span style={{
+        color: colors.accent,
+        fontFamily: 'Fredoka, monospace',
+        fontWeight: 600,
+        fontSize: 14,
+      }}>
+        {display}
+      </span>
+      <span style={{ color: colors.textMuted }}>|</span>
+      <span style={{ color: colors.textSecondary }}>进度</span>
+      <span style={{
+        color: colors.accent,
+        fontWeight: 600,
+      }}>
+        {progress}%
+      </span>
     </span>
   )
 }

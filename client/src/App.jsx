@@ -161,6 +161,12 @@ function App() {
   }, [])
 
   const renderPage = () => {
+    // 处理平台页面
+    if (activePage.startsWith('platform_')) {
+      const platformKey = activePage.replace('platform_', '')
+      return <HotList singleSource={platformKey} />
+    }
+
     switch (activePage) {
       case 'home':
         return <HotList />
@@ -227,7 +233,7 @@ function App() {
       <div className="app-layout" style={{ background: colors.bg, color: colors.text }}>
         <Sidebar activePage={activePage} onNavigate={setActivePage} />
         <div className="main-area">
-          <Header onShowShortcuts={() => setShowShortcuts(true)} />
+          <Header activePage={activePage} onShowShortcuts={() => setShowShortcuts(true)} />
           <div className="content-area">
             {renderPage()}
           </div>
