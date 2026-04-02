@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTheme } from '../ThemeContext.jsx'
 import { RefreshCwIcon, KeyboardIcon, CalendarIcon, ClockIcon } from './Icons.jsx'
+import Countdown from './Countdown.jsx'
 
 export default function Header({ onShowShortcuts }) {
   const { theme, tokens, isDark } = useTheme()
@@ -181,6 +182,9 @@ export default function Header({ onShowShortcuts }) {
           gap: '16px',
         }}
       >
+        {/* 下班倒计时 */}
+        <Countdown />
+
         {/* 假期提醒 */}
         {holiday && (
           <div

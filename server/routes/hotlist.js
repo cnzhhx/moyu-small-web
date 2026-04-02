@@ -146,24 +146,41 @@ async function fetchWithMetrics(name, fetchFn) {
 //  数据源抓取函数
 // ====================================================================
 
-/** 知乎热榜 - 使用创作者热榜 API */
+/**
+ * 通用 tophub.today 热榜解析
+ * @param {string} html - tophub 页面 HTML
+ * @returns {Array<{title: string, url: string, hot: string}>}
+ */
+function parseTophubHtml(html) {
+  const $ = cheerio.load(html);
+  const items = [];
+  $('table tbody tr').each((i, el) => {
+    const tds = $(el).find('td');
+    const linkEl = tds.eq(2).find('a');
+    const title = linkEl.text().trim().split('\n')[0].trim();
+    const url = linkEl.attr('href') || '#';
+    const hot = tds.eq(2).text().replace(title, '').trim();
+    if (title) items.push({ title, url, hot });
+  });
+  return items;
+}
+
+/** 知乎热榜 - 通过 tophub.today 聚合获取 */
 async function fetchZhihu() {
   return dedupedFetch('zhihu', async () =>
     fetchWithMetrics('zhihu', async () => {
-      const { data } = await fetchWithRetry({
+      const { data: html } = await fetchWithRetry({
         method: 'get',
-        url: 'https://www.zhihu.com/api/v4/creators/rank/hot?domain=0&period=hour&limit=20',
+        url: 'https://tophub.today/n/mproPpoq6O',
         headers: {
           ...defaultHeaders(),
-          Referer: 'https://www.zhihu.com/creator',
+          Referer: 'https://tophub.today/',
         },
         timeout: REQUEST_TIMEOUT,
       });
-      return (data.data || []).map((item) => ({
-        title: item.question?.title || '',
-        url: item.question?.url || '#',
-        hot: item.reaction?.new_pv ? formatHot(item.reaction.new_pv) : '',
-      }));
+      const items = parseTophubHtml(html).slice(0, 20);
+      if (!items.length) throw new Error('知乎热榜获取为空');
+      return items;
     })
   );
 }
@@ -191,29 +208,22 @@ async function fetchWeibo() {
   );
 }
 
-/** B站热门 - 使用入站必刷API */
+/** B站热门 - 通过 tophub.today 聚合获取 */
 async function fetchBilibili() {
   return dedupedFetch('bilibili', async () =>
     fetchWithMetrics('bilibili', async () => {
-      const { data } = await fetchWithRetry({
+      const { data: html } = await fetchWithRetry({
         method: 'get',
-        url: 'https://api.bilibili.com/x/web-interface/popular/precious?page_size=20',
+        url: 'https://tophub.today/n/74KvxwokxM',
         headers: {
           ...defaultHeaders(),
-          Referer: 'https://www.bilibili.com',
+          Referer: 'https://tophub.today/',
         },
         timeout: REQUEST_TIMEOUT,
       });
-
-      const list = (data.data?.list || []).slice(0, 20).map((item) => ({
-        title: item.title || '',
-        url: item.bvid ? `https://www.bilibili.com/video/${item.bvid}` : '#',
-        hot: item.stat?.view ? `${formatHot(item.stat.view)}播放` : '',
-        image: item.pic || item.cover || null,
-      }));
-
-      if (!list.length) throw new Error('B站热门获取为空');
-      return list;
+      const items = parseTophubHtml(html).slice(0, 20);
+      if (!items.length) throw new Error('B站热门获取为空');
+      return items;
     })
   );
 }
@@ -407,8 +417,8 @@ router.get('/all', async (req, res) => {
   const names = Object.keys(SOURCES);
   const payload = {};
 
-  // 从缓存读取所有数据
-  for (const name of names) {
+  // 并行读取缓存，对缓存未命中的尝试实时抓取
+  await Promise.all(names.map(async (name) => {
     const cached = await getCache(name);
     if (cached) {
       recordCacheHit(name);
@@ -420,6 +430,16 @@ router.get('/all', async (req, res) => {
       };
     } else {
       recordCacheMiss(name);
+      // 尝试实时抓取
+      try {
+        const list = await SOURCES[name].fetch();
+        if (list && list.length > 0) {
+          const result = buildResponse(list, name);
+          await setCache(name, result);
+          payload[name] = result;
+          return;
+        }
+      } catch {}
       payload[name] = {
         success: false,
         message: '数据正在初始化中',
@@ -428,7 +448,7 @@ router.get('/all', async (req, res) => {
         updateTime: new Date().toISOString(),
       };
     }
-  }
+  }));
 
   res.json({
     success: true,

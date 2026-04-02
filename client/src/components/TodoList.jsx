@@ -14,7 +14,9 @@ function loadTodos() {
 }
 
 function saveTodos(todos) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+  } catch {}
 }
 
 function relativeTime(ts) {

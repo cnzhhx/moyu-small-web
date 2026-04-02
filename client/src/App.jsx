@@ -399,8 +399,8 @@ function App() {
         window.dispatchEvent(new CustomEvent('closeModal'))
       }
 
-      // ? 显示快捷键帮助
-      if (e.key === '?' && !isMod && !e.shiftKey && !e.altKey) {
+      // ? 显示快捷键帮助（? 需要 Shift 键）
+      if (e.key === '?' && !isMod && !e.altKey) {
         const target = e.target
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
           e.preventDefault()

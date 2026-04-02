@@ -188,14 +188,6 @@ function randomDelay(min, max) {
 }
 
 /**
- * 获取下次执行间隔（默认60分钟）
- */
-function getNextInterval() {
-  // 默认60分钟
-  return 60 * 60 * 1000;
-}
-
-/**
  * 启动调度器
  * @param {number} intervalMinutes - 全局执行间隔（分钟）
  */

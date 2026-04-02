@@ -18,7 +18,11 @@ function SnakeGame({ theme, tokens, onScoreUpdate }) {
   const [score, setScore] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [highScore, setHighScore] = useState(() => {
-    return parseInt(localStorage.getItem('moyu-snake-highscore') || '0');
+    try {
+      return parseInt(localStorage.getItem('moyu-snake-highscore') || '0');
+    } catch {
+      return 0;
+    }
   });
   const directionRef = useRef(direction);
   const gameLoopRef = useRef(null);
@@ -134,7 +138,9 @@ function SnakeGame({ theme, tokens, onScoreUpdate }) {
               onScoreUpdate?.(newScore);
               if (newScore > highScore) {
                 setHighScore(newScore);
-                localStorage.setItem('moyu-snake-highscore', newScore.toString());
+                try {
+                  localStorage.setItem('moyu-snake-highscore', newScore.toString());
+                } catch {}
               }
               return newScore;
             });
@@ -321,7 +327,11 @@ function TetrisGame({ theme, tokens, onScoreUpdate }) {
   const [gameOver, setGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [highScore, setHighScore] = useState(() => {
-    return parseInt(localStorage.getItem('moyu-tetris-highscore') || '0');
+    try {
+      return parseInt(localStorage.getItem('moyu-tetris-highscore') || '0');
+    } catch {
+      return 0;
+    }
   });
   const [lines, setLines] = useState(0);
   const [level, setLevel] = useState(1);
@@ -361,11 +371,12 @@ function TetrisGame({ theme, tokens, onScoreUpdate }) {
     onScoreUpdate?.(0);
   };
 
-  const togglePause = () => {
-    if (!gameOver) {
-      setIsPaused(!isPaused);
-    }
-  };
+  const togglePause = useCallback(() => {
+    setGameOver(prev => {
+      if (!prev) setIsPaused(p => !p);
+      return prev;
+    });
+  }, []);
 
   const rotatePiece = (piece) => {
     const rotated = piece.shape[0].map((_, i) =>
@@ -427,7 +438,9 @@ function TetrisGame({ theme, tokens, onScoreUpdate }) {
       onScoreUpdate?.(newScore);
       if (newScore > currentHighScore) {
         setHighScore(newScore);
-        localStorage.setItem('moyu-tetris-highscore', newScore.toString());
+        try {
+          localStorage.setItem('moyu-tetris-highscore', newScore.toString());
+        } catch {}
       }
     }
 

@@ -210,6 +210,7 @@ const darkTheme = {
     md: '0 4px 6px rgba(0, 0, 0, 0.4)',
     lg: '0 10px 15px rgba(0, 0, 0, 0.5)',
     xl: '0 20px 25px rgba(0, 0, 0, 0.6)',
+    '2xl': '0 25px 50px rgba(0, 0, 0, 0.7)',
     glow: '0 0 20px rgba(255, 107, 107, 0.3)',
   },
 }
@@ -266,6 +267,7 @@ const lightTheme = {
     md: '0 4px 6px rgba(0, 0, 0, 0.07)',
     lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
     xl: '0 20px 25px rgba(0, 0, 0, 0.15)',
+    '2xl': '0 25px 50px rgba(0, 0, 0, 0.2)',
     glow: '0 0 20px rgba(255, 107, 107, 0.2)',
   },
 }
