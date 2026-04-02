@@ -1,5 +1,5 @@
 /**
- * 生成摸鱼岛 Webview HTML 内容
+ * 生成 Moyu Hub Webview HTML 内容
  * @param {Object} config - 配置对象
  * @param {string} config.offWorkTime - 下班时间 HH:mm
  * @param {boolean} config.enableHotlist - 是否启用热榜
@@ -14,7 +14,7 @@ function getWebviewContent(config) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>摸鱼岛</title>
+  <title>Moyu Hub</title>
   <style>
     * {
       margin: 0;
@@ -283,10 +283,10 @@ function getWebviewContent(config) {
   <!-- 页面加载指示器 -->
   <div id="page-loader">
     <div class="spinner"></div>
-    <div class="loader-text">正在加载摸鱼岛...</div>
+    <div class="loader-text">正在加载 Moyu Hub...</div>
   </div>
 
-  <div class="header">🐟 摸鱼岛</div>
+  <div class="header">🐟 Moyu Hub</div>
 
   <!-- 倒计时卡片 -->
   <div class="card ${enableCountdown ? '' : 'hidden'}" id="countdown-card">
@@ -315,9 +315,9 @@ function getWebviewContent(config) {
     </div>
   </div>
 
-  <!-- 摸鱼小贴士 -->
+  <!-- 效率小贴士 -->
   <div class="card">
-    <div class="card-title">💡 摸鱼小贴士</div>
+    <div class="card-title">💡 效率小贴士</div>
     <div class="tip-content" id="tip-content">
       <div class="skeleton skeleton-text"></div>
     </div>
@@ -328,20 +328,20 @@ function getWebviewContent(config) {
     const OFF_WORK_TIME = '${offWorkTime}';
     const WORK_START = '09:00';
 
-    // 摸鱼小贴士
+    // 效率小贴士
     const defaultTips = [
-      '摸鱼的最高境界：让老板以为你在加班，同事以为你在开会',
-      '建议每工作25分钟，摸鱼5分钟，这叫番茄摸鱼法🍅',
-      '打开一个终端窗口放在旁边，看起来就像在编译代码',
-      '记得时不时皱一下眉头，显得你在思考很难的问题',
-      '摸鱼时记得把屏幕亮度调低，省电又护眼',
-      '午饭后是摸鱼黄金时段，大家都在犯困没人注意你',
-      '学会用快捷键秒切屏幕，Alt+Tab 是摸鱼人的好朋友',
-      '在代码里写注释也算工作，写长一点的注释更好',
-      '喝水、上厕所、接热水，合理利用每一次离开工位的机会',
-      '保持桌面整洁，摸鱼时看起来更像一个认真工作的人',
-      '开一个很长的会议，然后静音摸鱼，完美',
-      '把摸鱼网站的标签页标题改成"技术文档"更安全'
+      '保持专注25分钟，休息5分钟，这叫番茄工作法🍅',
+      '适当休息有助于提高编码效率',
+      '喝杯水，活动一下颈椎，对程序员很重要',
+      '看看窗外，缓解眼部疲劳',
+      '深呼吸，保持心情愉快',
+      '午饭后适当休息，有助于下午的工作',
+      '学会用快捷键提高工作效率',
+      '写好代码注释是优秀的习惯',
+      '多喝水，保持身体健康',
+      '保持桌面整洁，提高工作效率',
+      '合理安排会议时间，提高效率',
+      '把常用网站的标签页整理好，方便访问'
     ];
 
     const tips = ${JSON.stringify(customTips.length > 0 ? customTips : null)} || defaultTips;

@@ -70,7 +70,7 @@ function activate(context) {
       vscode.StatusBarAlignment.Right,
       200
     );
-    countdownStatusBar.tooltip = '摸鱼岛 - 下班倒计时';
+    countdownStatusBar.tooltip = 'Moyu Hub - 下班倒计时';
     countdownStatusBar.command = 'moyuIsland.showPanel';
     countdownStatusBar.show();
     context.subscriptions.push(countdownStatusBar);
@@ -86,7 +86,7 @@ function activate(context) {
     vscode.StatusBarAlignment.Right,
     199
   );
-  quoteStatusBar.tooltip = '摸鱼岛 - 每日一言（点击刷新，右键查看完整）';
+  quoteStatusBar.tooltip = 'Moyu Hub - 每日一言（点击刷新，右键查看完整）';
   quoteStatusBar.command = 'moyuIsland.refreshQuote';
   quoteStatusBar.show();
   context.subscriptions.push(quoteStatusBar);
@@ -111,7 +111,7 @@ function activate(context) {
     })
   );
 
-  // 注册打开摸鱼网站命令
+  // 注册打开资讯网站命令
   context.subscriptions.push(
     vscode.commands.registerCommand('moyuIsland.openWebsite', () => {
       const websites = [
@@ -123,7 +123,7 @@ function activate(context) {
         { label: '🎵 网易云音乐', url: 'https://music.163.com/' }
       ];
       vscode.window.showQuickPick(websites, {
-        placeHolder: '选择一个摸鱼网站'
+        placeHolder: '选择一个资讯网站'
       }).then(selected => {
         if (selected) {
           vscode.env.openExternal(vscode.Uri.parse(selected.url));
@@ -305,7 +305,7 @@ function activate(context) {
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('moyuIsland')) {
         // 配置变更时重新加载窗口以应用新配置
-        vscode.window.showInformationMessage('摸鱼岛配置已更新，请重新加载窗口以生效', '重新加载')
+        vscode.window.showInformationMessage('Moyu Hub 配置已更新，请重新加载窗口以生效', '重新加载')
           .then(selection => {
             if (selection === '重新加载') {
               vscode.commands.executeCommand('workbench.action.reloadWindow');
@@ -352,11 +352,11 @@ function updateCountdown() {
 
 async function fetchDailyQuote() {
   const defaultQuotes = [
-    '今天也要元气满满地摸鱼哦~',
-    '代码写累了，不如摸会儿鱼🐟',
-    '摸鱼一时爽，一直摸鱼一直爽',
-    '老板不在，摸鱼天堂',
-    '认真工作是为了更好地摸鱼'
+    '今天也要元气满满地工作哦~',
+    '代码写累了，记得休息一下🐟',
+    '工作使我快乐，休息使我更高效',
+    '保持专注，高效完成工作',
+    '认真工作是为了更好地生活'
   ];
 
   try {

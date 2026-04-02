@@ -398,7 +398,7 @@ export default function TodoList() {
   }
 
   return (
-    <div style={{ padding: 16, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <style>{fishKeyframes}</style>
 
       <div style={{

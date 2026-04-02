@@ -1,7 +1,7 @@
 {
-  "name": "moyu-island",
-  "displayName": "摸鱼岛",
-  "description": "上班摸鱼神器 - 热榜聚合、下班倒计时、每日一言",
+  "name": "moyu-hub",
+  "displayName": "Moyu Hub",
+  "description": "效率工作台 - 热榜聚合、待办管理、工具箱、下班倒计时",
   "version": "0.2.0",
   "engines": {
     "vscode": "^1.85.0"
@@ -13,15 +13,15 @@
     "commands": [
       {
         "command": "moyuIsland.showPanel",
-        "title": "摸鱼岛：打开面板"
+        "title": "Moyu Hub：打开面板"
       },
       {
         "command": "moyuIsland.openWebsite",
-        "title": "摸鱼岛：打开摸鱼网站"
+        "title": "Moyu Hub：打开工作台"
       },
       {
         "command": "moyuIsland.refreshHotlist",
-        "title": "摸鱼岛：刷新热榜",
+        "title": "Moyu Hub：刷新热榜",
         "icon": "$(refresh)"
       },
       {
@@ -30,11 +30,11 @@
       },
       {
         "command": "moyuIsland.viewHoliday",
-        "title": "摸鱼岛：查看今日假期"
+        "title": "Moyu Hub：查看今日假期"
       },
       {
         "command": "moyuIsland.openSettings",
-        "title": "摸鱼岛：打开设置"
+        "title": "Moyu Hub：打开设置"
       },
       {
         "command": "moyuIsland.refreshQuote",
@@ -129,8 +129,8 @@
       "activitybar": [
         {
           "id": "moyu-island",
-          "title": "摸鱼岛",
-          "icon": "$(smiley)"
+          "title": "Moyu Hub",
+          "icon": "$(hubot)"
         }
       ]
     },
@@ -139,8 +139,8 @@
         {
           "type": "webview",
           "id": "moyuIsland.mainView",
-          "name": "摸鱼岛",
-          "icon": "$(smiley)"
+          "name": "工作台",
+          "icon": "$(hubot)"
         },
         {
           "id": "moyuIsland.hotlistTree",
@@ -160,7 +160,7 @@
       ]
     },
     "configuration": {
-      "title": "摸鱼岛",
+      "title": "Moyu Hub",
       "properties": {
         "moyuIsland.offWorkTime": {
           "type": "string",
@@ -170,7 +170,7 @@
         "moyuIsland.serverUrl": {
           "type": "string",
           "default": "http://localhost:3001",
-          "description": "摸鱼岛后端服务地址"
+          "description": "Moyu Hub 后端服务地址"
         },
         "moyuIsland.enableHotlist": {
           "type": "boolean",
@@ -185,13 +185,13 @@
         "moyuIsland.tips": {
           "type": "array",
           "default": [
-            "摸鱼的最高境界：让老板以为你在加班，同事以为你在开会",
-            "建议每工作25分钟，摸鱼5分钟，这叫番茄摸鱼法🍅",
-            "打开一个终端窗口放在旁边，看起来就像在编译代码",
-            "记得时不时皱一下眉头，显得你在思考很难的问题",
-            "摸鱼时记得把屏幕亮度调低，省电又护眼"
+            "保持专注25分钟，休息5分钟，这叫番茄工作法🍅",
+            "适当休息有助于提高编码效率",
+            "喝杯水，活动一下颈椎，对程序员很重要",
+            "看看窗外，缓解眼部疲劳",
+            "深呼吸，保持心情愉快"
           ],
-          "description": "自定义摸鱼小贴士列表",
+          "description": "自定义效率小贴士列表",
           "items": {
             "type": "string"
           }

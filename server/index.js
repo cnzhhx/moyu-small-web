@@ -3,10 +3,11 @@ import cors from 'cors';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
-import hotlistRouter, { getCacheStats } from './routes/hotlist.js';
+import hotlistRouter, { getCacheStats, initHotlistScheduler, getSchedulerStatus } from './routes/hotlist.js';
 import dailyRouter from './routes/daily.js';
 import { requestLogger, errorLogger } from './utils/logger.js';
 import { getRedisClient } from './utils/cache.js';
+import { stopScheduler } from './utils/scheduler.js';
 import {
   recordHttpRequest,
   getMetrics,
@@ -14,7 +15,7 @@ import {
 } from './utils/metrics.js';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3067;
 
 // 存储活跃连接用于优雅关闭
 const connections = new Set();
@@ -27,11 +28,11 @@ let server = null;
 const swaggerDocument = {
   openapi: '3.0.0',
   info: {
-    title: '摸鱼热榜 API',
+    title: '聚合热榜 API',
     description: '聚合多平台热榜数据的 API 服务',
     version: '2.0.0',
     contact: {
-      name: '摸鱼团队',
+      name: '开发团队',
     },
   },
   servers: [
@@ -59,7 +60,7 @@ const swaggerDocument = {
             description: '热榜来源',
             schema: {
               type: 'string',
-              enum: ['zhihu', 'weibo', 'bilibili', 'juejin', 'douyin', 'baidu', 'hupu', '36kr', 'sspai', 'toutiao', 'github'],
+              enum: ['zhihu', 'weibo', 'bilibili', 'juejin', 'douyin', 'baidu', '36kr', 'toutiao'],
             },
           },
         ],
@@ -412,6 +413,37 @@ app.get('/metrics', async (_req, res) => {
   }
 });
 
+// 调度器状态端点
+app.get('/api/scheduler/status', (_req, res) => {
+  res.json({
+    success: true,
+    data: getSchedulerStatus(),
+  });
+});
+
+// 手动刷新热榜（需要 token 验证）
+app.post('/api/scheduler/refresh', async (req, res) => {
+  const token = req.headers['x-refresh-token'] || req.query.token;
+  const expectedToken = process.env.REFRESH_TOKEN || 'moyu-refresh-secret';
+  if (token !== expectedToken) {
+    return res.status(403).json({ success: false, message: '未授权的操作' });
+  }
+
+  try {
+    const { refreshAllHotlists } = await import('./routes/hotlist.js');
+    await refreshAllHotlists();
+    res.json({
+      success: true,
+      message: '热榜数据已刷新',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `刷新失败: ${error.message}`,
+    });
+  }
+});
+
 // 错误日志中间件
 app.use(errorLogger);
 
@@ -421,6 +453,9 @@ app.use(errorLogger);
 
 async function gracefulShutdown(signal) {
   console.log(`\n${signal} 信号接收，开始优雅关闭...`);
+
+  // 停止调度器
+  stopScheduler();
 
   // 停止接收新连接
   if (server) {
@@ -475,10 +510,13 @@ process.on('unhandledRejection', (reason, promise) => {
 // ====================================================================
 
 server = app.listen(PORT, () => {
-  console.log(`摸鱼服务器已启动: http://localhost:${PORT}`);
+  console.log(`服务器已启动: http://localhost:${PORT}`);
   console.log(`API 文档: http://localhost:${PORT}/api-docs`);
   console.log(`健康检查: http://localhost:${PORT}/api/health`);
   console.log(`Prometheus 指标: http://localhost:${PORT}/metrics`);
+
+  // 初始化热榜定时更新（每2小时更新一次，只在8:00-22:00）
+  initHotlistScheduler(120);
 });
 
 // 跟踪活跃连接

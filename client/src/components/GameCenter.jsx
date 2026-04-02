@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTheme } from '../ThemeContext.jsx';
+import { GamepadIcon, PlayIcon, PauseIcon, RotateCwIcon, SkullIcon, LightbulbIcon, GridIcon, KeyboardIcon, ActivityIcon } from './Icons.jsx';
 
 const GRID_SIZE = 20;
 const CELL_SIZE = 20;
 const INITIAL_SPEED = 150;
 
-// ==================== 贪吃蛇游戏 ====================
-function SnakeGame({ colors, onScoreUpdate }) {
+// ═══════════════════════════════════════════════════
+// 贪吃蛇游戏
+// ═══════════════════════════════════════════════════
+function SnakeGame({ theme, tokens, onScoreUpdate }) {
   const canvasRef = useRef(null);
   const [snake, setSnake] = useState([{ x: 10, y: 10 }]);
   const [food, setFood] = useState({ x: 15, y: 15 });
@@ -33,7 +36,7 @@ function SnakeGame({ colors, onScoreUpdate }) {
     return newFood;
   }, []);
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     const initialSnake = [{ x: 10, y: 10 }];
     setSnake(initialSnake);
     setFood(generateFood(initialSnake));
@@ -42,13 +45,14 @@ function SnakeGame({ colors, onScoreUpdate }) {
     setScore(0);
     setIsPaused(false);
     onScoreUpdate?.(0);
-  };
+  }, [generateFood, onScoreUpdate]);
 
-  const togglePause = () => {
-    if (!gameOver) {
-      setIsPaused(!isPaused);
-    }
-  };
+  const togglePause = useCallback(() => {
+    setGameOver(prev => {
+      if (!prev) setIsPaused(p => !p);
+      return prev;
+    });
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -83,7 +87,6 @@ function SnakeGame({ colors, onScoreUpdate }) {
       if (newDir) {
         e.preventDefault();
         const currentDir = directionRef.current;
-        // 防止反向移动
         if (currentDir.x !== -newDir.x || currentDir.y !== -newDir.y) {
           setDirection(newDir);
         }
@@ -92,7 +95,7 @@ function SnakeGame({ colors, onScoreUpdate }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameOver, isPaused]);
+  }, [gameOver, isPaused, resetGame, togglePause]);
 
   useEffect(() => {
     if (gameOver || isPaused) {
@@ -159,11 +162,11 @@ function SnakeGame({ colors, onScoreUpdate }) {
     canvas.height = size;
 
     // 清空画布
-    ctx.fillStyle = colors.inputBg;
+    ctx.fillStyle = theme.bg.tertiary;
     ctx.fillRect(0, 0, size, size);
 
     // 绘制网格
-    ctx.strokeStyle = colors.border;
+    ctx.strokeStyle = theme.border.default;
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= GRID_SIZE; i++) {
       ctx.beginPath();
@@ -177,7 +180,7 @@ function SnakeGame({ colors, onScoreUpdate }) {
     }
 
     // 绘制食物
-    ctx.fillStyle = '#ef4444';
+    ctx.fillStyle = theme.status.error;
     ctx.beginPath();
     ctx.arc(
       food.x * CELL_SIZE + CELL_SIZE / 2,
@@ -191,7 +194,7 @@ function SnakeGame({ colors, onScoreUpdate }) {
     // 绘制蛇
     snake.forEach((segment, index) => {
       const isHead = index === 0;
-      ctx.fillStyle = isHead ? colors.accent : `${colors.accent}cc`;
+      ctx.fillStyle = isHead ? theme.accent.primary : `${theme.accent.primary}cc`;
       ctx.fillRect(
         segment.x * CELL_SIZE + 1,
         segment.y * CELL_SIZE + 1,
@@ -216,110 +219,86 @@ function SnakeGame({ colors, onScoreUpdate }) {
         );
       }
     });
-  }, [snake, food, colors]);
+  }, [snake, food, theme]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+    <GameContainer theme={theme} tokens={tokens}>
       {/* Score Board */}
-      <div style={{
-        display: 'flex', gap: 20, alignItems: 'center',
-        padding: '8px 16px', background: colors.cardBg,
-        borderRadius: 8, border: `1px solid ${colors.border}`,
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: colors.textSecondary }}>得分</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: colors.accent }}>{score}</div>
-        </div>
-        <div style={{ width: 1, height: 30, background: colors.border }} />
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: colors.textSecondary }}>最高分</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#22c55e' }}>{highScore}</div>
-        </div>
-        <div style={{ width: 1, height: 30, background: colors.border }} />
-        <button
+      <GameScoreBoard theme={theme} tokens={tokens}>
+        <ScoreItem theme={theme} tokens={tokens} label="得分" value={score} color={theme.accent.primary} />
+        <ScoreDivider theme={theme} />
+        <ScoreItem theme={theme} tokens={tokens} label="最高分" value={highScore} color={theme.status.success} />
+        <ScoreDivider theme={theme} />
+        <GameButton
           onClick={togglePause}
           disabled={gameOver}
-          style={{
-            padding: '6px 14px', borderRadius: 6, border: 'none',
-            background: isPaused ? '#22c55e' : colors.accent,
-            color: '#fff', cursor: gameOver ? 'default' : 'pointer',
-            fontSize: 13, opacity: gameOver ? 0.5 : 1,
-          }}
+          theme={theme}
+          tokens={tokens}
+          variant={isPaused ? 'success' : 'primary'}
+          icon={isPaused ? PlayIcon : PauseIcon}
         >
-          {isPaused ? '▶️ 继续' : '⏸️ 暂停'}
-        </button>
-      </div>
+          {isPaused ? '继续' : '暂停'}
+        </GameButton>
+      </GameScoreBoard>
 
       {/* Game Canvas */}
-      <div style={{ position: 'relative' }}>
+      <CanvasContainer theme={theme} tokens={tokens}>
         <canvas
           ref={canvasRef}
           style={{
-            border: `2px solid ${colors.border}`,
-            borderRadius: 8,
+            border: `2px solid ${theme.border.default}`,
+            borderRadius: tokens.borderRadius.md,
             display: 'block',
           }}
         />
 
         {/* Game Over Overlay */}
         {gameOver && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8,
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>💀</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
-              游戏结束
-            </div>
-            <div style={{ fontSize: 14, color: '#aaa', marginBottom: 16 }}>
-              最终得分: {score}
-            </div>
-            <button
+          <GameOverlay theme={theme} tokens={tokens}>
+            <SkullIcon size={48} color={theme.status.error} />
+            <OverlayTitle theme={theme} tokens={tokens}>游戏结束</OverlayTitle>
+            <OverlaySubtitle theme={theme} tokens={tokens}>最终得分: {score}</OverlaySubtitle>
+            <GameButton
               onClick={resetGame}
-              style={{
-                padding: '10px 24px', borderRadius: 8, border: 'none',
-                background: colors.accent, color: '#fff',
-                cursor: 'pointer', fontSize: 14, fontWeight: 600,
-              }}
+              theme={theme}
+              tokens={tokens}
+              variant="primary"
+              icon={RotateCwIcon}
             >
-              🔄 重新开始 (空格)
-            </button>
-          </div>
+              重新开始 (空格)
+            </GameButton>
+          </GameOverlay>
         )}
 
         {/* Pause Overlay */}
         {isPaused && !gameOver && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8,
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>⏸️</div>
-            <div style={{ fontSize: 16, color: '#fff' }}>已暂停</div>
-            <div style={{ fontSize: 12, color: '#aaa', marginTop: 8 }}>按空格继续</div>
-          </div>
+          <GameOverlay theme={theme} tokens={tokens} style={{ background: `${theme.bg.overlay}99` }}>
+            <PauseIcon size={48} color={theme.text.primary} />
+            <OverlayTitle theme={theme} tokens={tokens} style={{ fontSize: tokens.typography.fontSize.lg }}>
+              已暂停
+            </OverlayTitle>
+            <OverlaySubtitle theme={theme} tokens={tokens}>按空格继续</OverlaySubtitle>
+          </GameOverlay>
         )}
-      </div>
+      </CanvasContainer>
 
       {/* Controls */}
-      <div style={{
-        display: 'flex', gap: 8, alignItems: 'center',
-        color: colors.textSecondary, fontSize: 12,
-      }}>
-        <span>⌨️ WASD / 方向键 移动</span>
-        <span>•</span>
-        <span>␣ 暂停</span>
-      </div>
-    </div>
+      <GameControls theme={theme} tokens={tokens}>
+        <ControlItem icon={KeyboardIcon} theme={theme} tokens={tokens}>
+          WASD / 方向键 移动
+        </ControlItem>
+        <ControlDivider theme={theme} />
+        <ControlItem icon={PauseIcon} theme={theme} tokens={tokens}>
+          空格 暂停
+        </ControlItem>
+      </GameControls>
+    </GameContainer>
   );
 }
 
-// ==================== 俄罗斯方块游戏 ====================
+// ═══════════════════════════════════════════════════
+// 俄罗斯方块游戏
+// ═══════════════════════════════════════════════════
 const TETRIS_COLS = 10;
 const TETRIS_ROWS = 20;
 const TETRIS_CELL_SIZE = 24;
@@ -334,7 +313,7 @@ const TETROMINOES = {
   L: { shape: [[0, 0, 1], [1, 1, 1]], color: '#f97316' },
 };
 
-function TetrisGame({ colors, onScoreUpdate }) {
+function TetrisGame({ theme, tokens, onScoreUpdate }) {
   const canvasRef = useRef(null);
   const [board, setBoard] = useState(Array(TETRIS_ROWS).fill(null).map(() => Array(TETRIS_COLS).fill(0)));
   const [currentPiece, setCurrentPiece] = useState(null);
@@ -346,6 +325,18 @@ function TetrisGame({ colors, onScoreUpdate }) {
   });
   const [lines, setLines] = useState(0);
   const [level, setLevel] = useState(1);
+
+  // 使用 ref 保持最新值，避免闭包中读到 stale state
+  const boardRef = useRef(board);
+  boardRef.current = board;
+  const scoreRef = useRef(score);
+  scoreRef.current = score;
+  const linesRef = useRef(lines);
+  linesRef.current = lines;
+  const levelRef = useRef(level);
+  levelRef.current = level;
+  const highScoreRef = useRef(highScore);
+  highScoreRef.current = highScore;
 
   const createPiece = useCallback(() => {
     const types = Object.keys(TETROMINOES);
@@ -384,6 +375,7 @@ function TetrisGame({ colors, onScoreUpdate }) {
   };
 
   const isValidMove = (piece, newX, newY, newShape = piece.shape) => {
+    const currentBoard = boardRef.current;
     for (let y = 0; y < newShape.length; y++) {
       for (let x = 0; x < newShape[y].length; x++) {
         if (newShape[y][x]) {
@@ -392,7 +384,7 @@ function TetrisGame({ colors, onScoreUpdate }) {
           if (boardX < 0 || boardX >= TETRIS_COLS || boardY >= TETRIS_ROWS) {
             return false;
           }
-          if (boardY >= 0 && board[boardY][boardX]) {
+          if (boardY >= 0 && currentBoard[boardY][boardX]) {
             return false;
           }
         }
@@ -402,7 +394,7 @@ function TetrisGame({ colors, onScoreUpdate }) {
   };
 
   const lockPiece = (piece) => {
-    const newBoard = board.map(row => [...row]);
+    const newBoard = boardRef.current.map(row => [...row]);
     piece.shape.forEach((row, y) => {
       row.forEach((cell, x) => {
         if (cell && piece.y + y >= 0) {
@@ -424,12 +416,16 @@ function TetrisGame({ colors, onScoreUpdate }) {
 
     if (clearedLines > 0) {
       const lineScores = [0, 100, 300, 500, 800];
-      const newScore = score + lineScores[clearedLines] * level;
+      const currentScore = scoreRef.current;
+      const currentLevel = levelRef.current;
+      const currentLines = linesRef.current;
+      const currentHighScore = highScoreRef.current;
+      const newScore = currentScore + lineScores[clearedLines] * currentLevel;
       setScore(newScore);
-      setLines(l => l + clearedLines);
-      setLevel(Math.floor((lines + clearedLines) / 10) + 1);
+      setLines(currentLines + clearedLines);
+      setLevel(Math.floor((currentLines + clearedLines) / 10) + 1);
       onScoreUpdate?.(newScore);
-      if (newScore > highScore) {
+      if (newScore > currentHighScore) {
         setHighScore(newScore);
         localStorage.setItem('moyu-tetris-highscore', newScore.toString());
       }
@@ -538,11 +534,11 @@ function TetrisGame({ colors, onScoreUpdate }) {
     canvas.height = TETRIS_ROWS * TETRIS_CELL_SIZE;
 
     // 清空画布
-    ctx.fillStyle = colors.inputBg;
+    ctx.fillStyle = theme.bg.tertiary;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 绘制网格
-    ctx.strokeStyle = colors.border;
+    ctx.strokeStyle = theme.border.default;
     ctx.lineWidth = 0.5;
     for (let x = 0; x <= TETRIS_COLS; x++) {
       ctx.beginPath();
@@ -588,201 +584,422 @@ function TetrisGame({ colors, onScoreUpdate }) {
         });
       });
     }
-  }, [board, currentPiece, colors]);
+  }, [board, currentPiece, theme]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+    <GameContainer theme={theme} tokens={tokens}>
       {/* Score Board */}
-      <div style={{
-        display: 'flex', gap: 16, alignItems: 'center',
-        padding: '8px 16px', background: colors.cardBg,
-        borderRadius: 8, border: `1px solid ${colors.border}`,
-        flexWrap: 'wrap', justifyContent: 'center',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: colors.textSecondary }}>得分</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: colors.accent }}>{score}</div>
-        </div>
-        <div style={{ width: 1, height: 30, background: colors.border }} />
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: colors.textSecondary }}>行数</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#22c55e' }}>{lines}</div>
-        </div>
-        <div style={{ width: 1, height: 30, background: colors.border }} />
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: colors.textSecondary }}>等级</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>{level}</div>
-        </div>
-        <div style={{ width: 1, height: 30, background: colors.border }} />
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: colors.textSecondary }}>最高分</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#a855f7' }}>{highScore}</div>
-        </div>
-        <div style={{ width: 1, height: 30, background: colors.border }} />
-        <button
+      <GameScoreBoard theme={theme} tokens={tokens} style={{ flexWrap: 'wrap' }}>
+        <ScoreItem theme={theme} tokens={tokens} label="得分" value={score} color={theme.accent.primary} />
+        <ScoreDivider theme={theme} />
+        <ScoreItem theme={theme} tokens={tokens} label="行数" value={lines} color={theme.status.success} />
+        <ScoreDivider theme={theme} />
+        <ScoreItem theme={theme} tokens={tokens} label="等级" value={level} color={theme.status.warning} />
+        <ScoreDivider theme={theme} />
+        <ScoreItem theme={theme} tokens={tokens} label="最高分" value={highScore} color="#a855f7" />
+        <ScoreDivider theme={theme} />
+        <GameButton
           onClick={togglePause}
           disabled={gameOver}
-          style={{
-            padding: '6px 14px', borderRadius: 6, border: 'none',
-            background: isPaused ? '#22c55e' : colors.accent,
-            color: '#fff', cursor: gameOver ? 'default' : 'pointer',
-            fontSize: 13, opacity: gameOver ? 0.5 : 1,
-          }}
+          theme={theme}
+          tokens={tokens}
+          variant={isPaused ? 'success' : 'primary'}
+          icon={isPaused ? PlayIcon : PauseIcon}
         >
-          {isPaused ? '▶️ 继续' : '⏸️ 暂停'}
-        </button>
-      </div>
+          {isPaused ? '继续' : '暂停'}
+        </GameButton>
+      </GameScoreBoard>
 
       {/* Game Canvas */}
-      <div style={{ position: 'relative' }}>
+      <CanvasContainer theme={theme} tokens={tokens}>
         <canvas
           ref={canvasRef}
           style={{
-            border: `2px solid ${colors.border}`,
-            borderRadius: 8,
+            border: `2px solid ${theme.border.default}`,
+            borderRadius: tokens.borderRadius.md,
             display: 'block',
           }}
         />
 
         {/* Game Over Overlay */}
         {gameOver && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8,
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>💀</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
-              游戏结束
-            </div>
-            <div style={{ fontSize: 14, color: '#aaa', marginBottom: 16 }}>
+          <GameOverlay theme={theme} tokens={tokens}>
+            <SkullIcon size={48} color={theme.status.error} />
+            <OverlayTitle theme={theme} tokens={tokens}>游戏结束</OverlayTitle>
+            <OverlaySubtitle theme={theme} tokens={tokens}>
               最终得分: {score} | 消除行数: {lines}
-            </div>
-            <button
+            </OverlaySubtitle>
+            <GameButton
               onClick={resetGame}
-              style={{
-                padding: '10px 24px', borderRadius: 8, border: 'none',
-                background: colors.accent, color: '#fff',
-                cursor: 'pointer', fontSize: 14, fontWeight: 600,
-              }}
+              theme={theme}
+              tokens={tokens}
+              variant="primary"
+              icon={RotateCwIcon}
             >
-              🔄 重新开始 (空格)
-            </button>
-          </div>
+              重新开始 (空格)
+            </GameButton>
+          </GameOverlay>
         )}
 
         {/* Pause Overlay */}
         {isPaused && !gameOver && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8,
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>⏸️</div>
-            <div style={{ fontSize: 16, color: '#fff' }}>已暂停</div>
-            <div style={{ fontSize: 12, color: '#aaa', marginTop: 8 }}>按空格继续</div>
-          </div>
+          <GameOverlay theme={theme} tokens={tokens} style={{ background: `${theme.bg.overlay}99` }}>
+            <PauseIcon size={48} color={theme.text.primary} />
+            <OverlayTitle theme={theme} tokens={tokens} style={{ fontSize: tokens.typography.fontSize.lg }}>
+              已暂停
+            </OverlayTitle>
+            <OverlaySubtitle theme={theme} tokens={tokens}>按空格继续</OverlaySubtitle>
+          </GameOverlay>
         )}
-      </div>
+      </CanvasContainer>
 
       {/* Controls */}
+      <GameControls theme={theme} tokens={tokens}>
+        <ControlItem icon={KeyboardIcon} theme={theme} tokens={tokens}>
+          方向键 移动
+        </ControlItem>
+        <ControlDivider theme={theme} />
+        <ControlItem icon={RotateCwIcon} theme={theme} tokens={tokens}>
+          上/W 旋转
+        </ControlItem>
+        <ControlDivider theme={theme} />
+        <ControlItem icon={PauseIcon} theme={theme} tokens={tokens}>
+          下/S 加速
+        </ControlItem>
+        <ControlDivider theme={theme} />
+        <ControlItem icon={PauseIcon} theme={theme} tokens={tokens}>
+          空格 暂停
+        </ControlItem>
+      </GameControls>
+    </GameContainer>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+// UI 组件
+// ═══════════════════════════════════════════════════
+
+function GameContainer({ children, theme, tokens }) {
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 16,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function GameScoreBoard({ children, theme, tokens, style = {} }) {
+  return (
+    <div style={{
+      display: 'flex',
+      gap: 16,
+      alignItems: 'center',
+      padding: '10px 16px',
+      background: theme.glass.background,
+      backdropFilter: theme.glass.blur,
+      border: theme.glass.border,
+      borderRadius: tokens.borderRadius.lg,
+      boxShadow: theme.shadow.sm,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function ScoreItem({ theme, tokens, label, value, color }) {
+  return (
+    <div style={{ textAlign: 'center', minWidth: 50 }}>
       <div style={{
-        display: 'flex', gap: 12, alignItems: 'center',
-        color: colors.textSecondary, fontSize: 12,
-        flexWrap: 'wrap', justifyContent: 'center',
+        fontSize: tokens.typography.fontSize.xs,
+        color: theme.text.secondary,
+        marginBottom: 2,
       }}>
-        <span>⌨️ ←↓→ 移动</span>
-        <span>•</span>
-        <span>↑ / W 旋转</span>
-        <span>•</span>
-        <span>↓ / S 加速</span>
-        <span>•</span>
-        <span>␣ 暂停</span>
+        {label}
+      </div>
+      <div style={{
+        fontSize: tokens.typography.fontSize.xl,
+        fontWeight: 700,
+        color: color,
+        fontFamily: tokens.typography.fontFamily.mono,
+      }}>
+        {value}
       </div>
     </div>
   );
 }
 
-// ==================== 游戏中心主组件 ====================
+function ScoreDivider({ theme }) {
+  return (
+    <div style={{
+      width: 1,
+      height: 30,
+      background: theme.border.default,
+    }} />
+  );
+}
+
+function GameButton({ children, onClick, disabled, theme, tokens, variant = 'primary', icon: Icon }) {
+  const variantStyles = {
+    primary: {
+      background: theme.accent.primary,
+      color: '#fff',
+    },
+    success: {
+      background: theme.status.success,
+      color: '#fff',
+    },
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '6px 14px',
+        borderRadius: tokens.borderRadius.md,
+        border: 'none',
+        ...variantStyles[variant],
+        cursor: disabled ? 'default' : 'pointer',
+        fontSize: tokens.typography.fontSize.sm,
+        fontWeight: 600,
+        opacity: disabled ? 0.5 : 1,
+        transition: `all ${tokens.animation.duration.fast} ease`,
+      }}
+    >
+      {Icon && <Icon size={16} />}
+      {children}
+    </button>
+  );
+}
+
+function CanvasContainer({ children, theme, tokens }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      {children}
+    </div>
+  );
+}
+
+function GameOverlay({ children, theme, tokens, style = {} }) {
+  return (
+    <div style={{
+      position: 'absolute',
+      inset: 0,
+      background: theme.bg.overlay,
+      backdropFilter: theme.glass.blur,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: tokens.borderRadius.md,
+      gap: 12,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function OverlayTitle({ children, theme, tokens, style = {} }) {
+  return (
+    <div style={{
+      fontSize: tokens?.typography?.fontSize?.xl || '20px',
+      fontWeight: 700,
+      color: theme.text.primary,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function OverlaySubtitle({ children, theme, tokens }) {
+  return (
+    <div style={{
+      fontSize: tokens?.typography?.fontSize?.sm || '14px',
+      color: theme.text.secondary,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function GameControls({ children, theme, tokens }) {
+  return (
+    <div style={{
+      display: 'flex',
+      gap: 12,
+      alignItems: 'center',
+      color: theme.text.secondary,
+      fontSize: tokens.typography.fontSize.sm,
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function ControlItem({ children, icon: Icon, theme, tokens }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+    }}>
+      <Icon size={14} />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+function ControlDivider({ theme }) {
+  return (
+    <span style={{ color: theme.border.default }}>•</span>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+// 游戏中心主组件
+// ═══════════════════════════════════════════════════
 export default function GameCenter() {
-  const { colors } = useTheme();
-  const [activeGame, setActiveGame] = useState('snake'); // 'snake' | 'tetris'
+  const { theme, tokens } = useTheme();
+  const [activeGame, setActiveGame] = useState('snake');
   const [snakeScore, setSnakeScore] = useState(0);
   const [tetrisScore, setTetrisScore] = useState(0);
 
   return (
     <div style={{
-      padding: 16, height: '100%', display: 'flex',
-      flexDirection: 'column', overflow: 'hidden',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
     }}>
       <div style={{
-        background: colors.cardBg, borderRadius: 14,
-        border: `1px solid ${colors.border}`,
-        boxShadow: `0 2px 12px ${colors.shadow}`,
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden', flex: 1,
-        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
+        background: theme.glass.background,
+        backdropFilter: theme.glass.blur,
+        border: theme.glass.border,
+        borderRadius: tokens.borderRadius.xl,
+        boxShadow: theme.shadow.md,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        flex: 1,
+        transition: `all ${tokens.animation.duration.normal} ease`,
       }}>
         {/* Header */}
         <div style={{
-          padding: '16px 20px', borderBottom: `1px solid ${colors.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 12,
+          padding: '16px 20px',
+          borderBottom: `1px solid ${theme.border.default}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: colors.text }}>
-              🎮 摸鱼游戏中心
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: tokens.borderRadius.md,
+              background: theme.gradient.primary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <GamepadIcon size={22} color="#fff" />
+            </div>
+            <span style={{
+              fontSize: tokens.typography.fontSize.xl,
+              fontWeight: 700,
+              color: theme.text.primary,
+            }}>
+              休闲游戏中心
             </span>
           </div>
 
           {/* Game Selector */}
           <div style={{
-            display: 'flex', gap: 4,
-            background: colors.inputBg, padding: 4, borderRadius: 8,
+            display: 'flex',
+            gap: 4,
+            background: theme.bg.tertiary,
+            padding: 4,
+            borderRadius: tokens.borderRadius.md,
           }}>
             {[
-              { key: 'snake', label: '贪吃蛇', icon: '🐍' },
-              { key: 'tetris', label: '俄罗斯方块', icon: '🧱' },
-            ].map(game => (
-              <button
-                key={game.key}
-                onClick={() => setActiveGame(game.key)}
-                style={{
-                  padding: '8px 16px', borderRadius: 6, border: 'none',
-                  background: activeGame === game.key ? colors.accent : 'transparent',
-                  color: activeGame === game.key ? '#fff' : colors.textSecondary,
-                  cursor: 'pointer', fontSize: 13, fontWeight: 500,
-                  transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6,
-                }}
-              >
-                {game.icon} {game.label}
-              </button>
-            ))}
+              { key: 'snake', label: '贪吃蛇', icon: ActivityIcon },
+              { key: 'tetris', label: '俄罗斯方块', icon: GridIcon },
+            ].map(game => {
+              const Icon = game.icon;
+              const isActive = activeGame === game.key;
+              return (
+                <button
+                  key={game.key}
+                  onClick={() => setActiveGame(game.key)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 16px',
+                    borderRadius: tokens.borderRadius.base,
+                    border: 'none',
+                    background: isActive ? theme.accent.primary : 'transparent',
+                    color: isActive ? '#fff' : theme.text.secondary,
+                    cursor: 'pointer',
+                    fontSize: tokens.typography.fontSize.sm,
+                    fontWeight: isActive ? 600 : 500,
+                    transition: `all ${tokens.animation.duration.fast} ease`,
+                  }}
+                >
+                  <Icon size={16} />
+                  {game.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Game Area */}
         <div style={{
-          flex: 1, overflow: 'auto', padding: 20,
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          flex: 1,
+          overflow: 'auto',
+          padding: 20,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}>
           {activeGame === 'snake' ? (
-            <SnakeGame colors={colors} onScoreUpdate={setSnakeScore} />
+            <SnakeGame theme={theme} tokens={tokens} onScoreUpdate={setSnakeScore} />
           ) : (
-            <TetrisGame colors={colors} onScoreUpdate={setTetrisScore} />
+            <TetrisGame theme={theme} tokens={tokens} onScoreUpdate={setTetrisScore} />
           )}
         </div>
 
         {/* Footer */}
         <div style={{
-          padding: '12px 20px', borderTop: `1px solid ${colors.border}`,
-          fontSize: 12, color: colors.textMuted, textAlign: 'center',
+          padding: '12px 20px',
+          borderTop: `1px solid ${theme.border.default}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          fontSize: tokens.typography.fontSize.sm,
+          color: theme.text.tertiary,
         }}>
-          💡 提示：玩游戏时按 ` 键可快速切换到伪装模式
+          <LightbulbIcon size={16} />
+          <span>提示：玩游戏时按 ` 键可快速切换到伪装模式</span>
         </div>
       </div>
     </div>

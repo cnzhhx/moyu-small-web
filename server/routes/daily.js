@@ -22,8 +22,8 @@ router.get('/sentence', async (_req, res) => {
     res.json({
       success: true,
       data: {
-        content: '摸鱼一时爽，一直摸鱼一直爽。',
-        from: '摸鱼学导论',
+        content: '工作使我快乐，休息使我更高效。',
+        from: '生活哲学',
         author: '佚名',
       },
     });
@@ -46,16 +46,27 @@ const holidays = [
   { name: '端午节', date: '2026-06-19' },
   { name: '中秋节', date: '2026-09-25' },
   { name: '国庆节', date: '2026-10-01' },
+  { name: '元旦', date: '2027-01-01' },
+  { name: '春节', date: '2027-02-06' },
+  { name: '清明节', date: '2027-04-05' },
+  { name: '劳动节', date: '2027-05-01' },
+  { name: '端午节', date: '2027-06-09' },
+  { name: '中秋节', date: '2027-09-15' },
+  { name: '国庆节', date: '2027-10-01' },
 ];
 
 router.get('/countdown', (_req, res) => {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+  // 使用 UTC+8 时区统一计算
+  const nowUtc = Date.now();
+  const cnOffset = 8 * 60 * 60 * 1000;
+  const cnNow = new Date(nowUtc + cnOffset);
+  // 取中国时区的当天 0 点（UTC 时间）
+  const cnTodayStart = new Date(Date.UTC(cnNow.getUTCFullYear(), cnNow.getUTCMonth(), cnNow.getUTCDate()));
 
   const upcoming = holidays
     .map((h) => {
       const target = new Date(h.date + 'T00:00:00+08:00');
-      const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+      const diff = Math.ceil((target - cnTodayStart) / (1000 * 60 * 60 * 24));
       return { ...h, days: diff };
     })
     .filter((h) => h.days > 0)
