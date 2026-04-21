@@ -1,621 +1,702 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTheme } from '../ThemeContext.jsx'
-import { useToast } from '../App.jsx'
-import HotlistAnalytics from './HotlistAnalytics.jsx'
-import { ShareButton, FavoritesPanel } from './SocialFeatures.jsx'
+import { 
+  RefreshCwIcon, 
+  ExternalLinkIcon,
+  FlameIcon,
+  MessageCircleIcon,
+  VideoIcon,
+  AwardIcon,
+  SearchIcon,
+  MusicIcon,
+  NewspaperIcon,
+} from './Icons.jsx'
 
-// SVG Icons - Retro-Futurism Style
-const Icons = {
-  refresh: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12a9 9 0 11-2.636-6.364"/>
-      <path d="M21 3v6h-6"/>
-    </svg>
-  ),
-  chart: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 20V10"/>
-      <path d="M12 20V4"/>
-      <path d="M6 20v-6"/>
-    </svg>
-  ),
-  empty: (
-    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-      <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" opacity="0.4"/>
-      <rect x="20" y="28" width="24" height="3" rx="1.5" fill="currentColor" opacity="0.3"/>
-      <rect x="24" y="34" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.3"/>
-      <circle cx="26" cy="22" r="4" fill="currentColor" opacity="0.2"/>
-      <circle cx="38" cy="22" r="4" fill="currentColor" opacity="0.2"/>
-    </svg>
-  ),
-  error: (
-    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-      <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="2" opacity="0.4"/>
-      <circle cx="32" cy="32" r="16" fill="currentColor" opacity="0.1"/>
-      <path d="M24 24l16 16M40 24l-16 16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
-    </svg>
-  ),
-  star: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-    </svg>
-  ),
-}
-
-// Platform icons as SVG
-const PlatformIcons = {
-  zhihu: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><text x="4" y="18" fontSize="14" fontWeight="bold">知</text></svg>,
-  weibo: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="0"/><text x="6" y="16" fontSize="10" fill="#fff">微</text></svg>,
-  bilibili: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="6" width="20" height="14" rx="4"/><circle cx="8" cy="13" r="2" fill="#fff"/><circle cx="16" cy="13" r="2" fill="#fff"/></svg>,
-  juejin: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 22,10 12,18 2,10"/></svg>,
-  github: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>,
-  douyin: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>,
-  baidu: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5.927 12.497c2.063-.443 1.782-2.909 1.72-3.448-.101-.87-.853-2.357-2.364-2.247-1.859.135-1.99 2.129-1.99 2.129-.226 1.363.574 3.009 2.634 3.566zm4.088-4.99c1.356 0 2.456-1.498 2.456-3.346C12.471 2.312 11.371.814 10.015.814c-1.356 0-2.456 1.498-2.456 3.347 0 1.848 1.1 3.346 2.456 3.346zm6.037.222c1.567.181 2.364-1.367 2.545-2.497.18-1.13-.536-2.469-1.698-2.648-1.162-.18-2.324.85-2.506 2.16-.18 1.31.091 2.804 1.659 2.985zm3.46 4.316s-2.216-1.617-3.46-2.23c-1.513-.746-3.116-.238-3.88.683-.764.922-.68 2.27-.238 2.954.443.684 1.862 1.407 1.862 1.407s-1.637 1.063-1.862 1.776c-.226.713.028 1.716.903 2.103.875.386 1.85.101 2.42-.523.57-.624.625-1.63.282-2.32-.343-.689-1.246-1.27-1.246-1.27s2.574-.226 3.474-1.547c.9-1.32.438-2.277.438-2.277s1.093.464 1.307 1.244z"/></svg>,
-  hupu: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="7" y="16" fontSize="10" fill="#fff">虎</text></svg>,
-  '36kr': <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="4" width="20" height="16" rx="2"/><text x="5" y="15" fontSize="8" fill="#fff">36</text></svg>,
-  sspai: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
-  toutiao: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 12h10M12 7v10" stroke="#fff" strokeWidth="2"/></svg>,
-}
-
-const TABS = [
-  { key: 'zhihu', label: '知乎', icon: PlatformIcons.zhihu },
-  { key: 'weibo', label: '微博', icon: PlatformIcons.weibo },
-  { key: 'bilibili', label: 'B站', icon: PlatformIcons.bilibili },
-  { key: 'juejin', label: '掘金', icon: PlatformIcons.juejin },
-  { key: 'github', label: 'GitHub', icon: PlatformIcons.github },
-  { key: 'douyin', label: '抖音', icon: PlatformIcons.douyin },
-  { key: 'baidu', label: '百度', icon: PlatformIcons.baidu },
-  { key: 'hupu', label: '虎扑', icon: PlatformIcons.hupu },
-  { key: '36kr', label: '36氪', icon: PlatformIcons['36kr'] },
-  { key: 'sspai', label: '少数派', icon: PlatformIcons.sspai },
-  { key: 'toutiao', label: '头条', icon: PlatformIcons.toutiao },
+// 热榜平台配置 - SVG 图标替代 emoji
+const PLATFORMS = [
+  { key: 'zhihu', label: '知乎', icon: MessageCircleIcon, color: '#0084ff' },
+  { key: 'weibo', label: '微博', icon: FlameIcon, color: '#e6162d' },
+  { key: 'bilibili', label: 'B站', icon: VideoIcon, color: '#fb7299' },
+  { key: 'juejin', label: '掘金', icon: AwardIcon, color: '#1e80ff' },
+  { key: 'douyin', label: '抖音', icon: MusicIcon, color: '#000000' },
+  { key: 'baidu', label: '百度', icon: SearchIcon, color: '#2932e1' },
+  { key: '36kr', label: '36氪', icon: NewspaperIcon, color: '#4285f4' },
+  { key: 'toutiao', label: '头条', icon: FlameIcon, color: '#ed4040' },
 ]
 
-const SKELETON_WIDTHS = ['90%', '75%', '85%', '60%', '80%', '70%', '88%', '65%']
-
-function formatRelativeTime(timeStr) {
-  if (!timeStr) return ''
-  const now = Date.now()
-  const then = new Date(timeStr).getTime()
-  if (isNaN(then)) return timeStr
-  const diff = Math.max(0, Math.floor((now - then) / 1000))
-  if (diff < 60) return '刚刚'
-  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
-  return `${Math.floor(diff / 86400)}天前`
+// 响应式列数配置
+function getGridColumns(width) {
+  if (width >= 1800) return 4
+  if (width >= 1400) return 3
+  if (width >= 900) return 2
+  return 1
 }
 
-function SkeletonLoader({ colors }) {
-  const base = {
-    borderRadius: 8,
-    background: `linear-gradient(90deg, ${colors.inputBg} 25%, ${colors.hover} 50%, ${colors.inputBg} 75%)`,
-    backgroundSize: '200% 100%',
-    animation: 'hotlist-shimmer 1.8s infinite ease-in-out',
+// 格式化时间差（友好显示）
+function formatTimeAgo(dateString) {
+  if (!dateString) return '未知';
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return '刚刚';
+  if (diffMins < 60) return `${diffMins}分钟前`;
+  if (diffHours < 24) return `${diffHours}小时前`;
+  if (diffDays === 1) return '昨天';
+  return `${diffDays}天前`;
+}
+
+// 排名徽章组件
+function RankBadge({ rank, theme, tokens }) {
+  const isTop3 = rank <= 3
+  const colors = {
+    1: { bg: '#FFD700', text: '#000' },
+    2: { bg: '#C0C0C0', text: '#000' },
+    3: { bg: '#CD7F32', text: '#fff' },
   }
+  
   return (
-    <div style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {SKELETON_WIDTHS.map((w, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 4px' }}>
-          <div style={{
-            ...base,
-            width: 32,
-            height: 32,
+    <div
+      style={{
+        width: '28px',
+        height: '28px',
+        borderRadius: tokens.borderRadius.base,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: tokens.typography.fontSize.sm,
+        fontWeight: tokens.typography.fontWeight.bold,
+        background: isTop3 ? colors[rank].bg : theme.bg.tertiary,
+        color: isTop3 ? colors[rank].text : theme.text.tertiary,
+        flexShrink: 0,
+        boxShadow: isTop3 ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+      }}
+    >
+      {rank}
+    </div>
+  )
+}
+
+
+
+// 图片占位符组件
+function ImagePlaceholder({ theme, tokens }) {
+  return (
+    <div
+      style={{
+        width: '60px',
+        height: '45px',
+        borderRadius: tokens.borderRadius.sm,
+        background: theme.bg.tertiary,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <VideoIcon size={16} color={theme.text.tertiary} />
+    </div>
+  )
+}
+
+// 热榜列表项组件
+function HotListItem({ item, index, theme, tokens }) {
+  const [isHovered, setIsHovered] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
+  
+  const hasImage = item.image && !imageError
+  
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '10px 12px',
+        borderRadius: tokens.borderRadius.md,
+        background: isHovered ? theme.glass.backgroundHover : 'transparent',
+        border: `1px solid ${isHovered ? theme.border.hover : 'transparent'}`,
+        textDecoration: 'none',
+        cursor: 'pointer',
+        transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
+        transition: `all ${tokens.animation.duration.fast} ${tokens.animation.easing.smooth}`,
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* 排名 */}
+      <RankBadge rank={index + 1} theme={theme} tokens={tokens} />
+      
+      {/* 缩略图 - 仅在有时显示 */}
+      {hasImage && (
+        <div
+          style={{
+            width: '60px',
+            height: '45px',
+            borderRadius: tokens.borderRadius.sm,
+            overflow: 'hidden',
             flexShrink: 0,
-            animationDelay: `${i * 0.1}s`,
-            borderRadius: 10,
-          }} />
-          <div style={{
-            ...base,
-            width: w,
-            height: 18,
-            flex: 1,
-            animationDelay: `${i * 0.1}s`,
-            borderRadius: 6,
-          }} />
+            background: theme.bg.tertiary,
+            position: 'relative',
+          }}
+        >
+          {!imageLoaded && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: theme.bg.tertiary,
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }}
+            />
+          )}
+          <img
+            src={item.image}
+            alt=""
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: imageLoaded ? 1 : 0,
+              transition: 'opacity 0.2s ease',
+            }}
+          />
+        </div>
+      )}
+      
+      {/* 标题 */}
+      <span
+        style={{
+          flex: 1,
+          fontSize: tokens.typography.fontSize.sm,
+          color: theme.text.primary,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          fontWeight: isHovered ? tokens.typography.fontWeight.medium : tokens.typography.fontWeight.normal,
+          transition: `font-weight ${tokens.animation.duration.fast} ease`,
+        }}
+        title={item.title}
+      >
+        {item.title}
+      </span>
+      
+      {/* 热度 */}
+      {item.hot && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 10px',
+            borderRadius: tokens.borderRadius.full,
+            background: `${theme.accent.primary}15`,
+            border: `1px solid ${theme.accent.primary}30`,
+            flexShrink: 0,
+          }}
+        >
+          <FlameIcon size={12} color={theme.accent.primary} />
+          <span
+            style={{
+              fontSize: tokens.typography.fontSize.xs,
+              fontWeight: tokens.typography.fontWeight.semibold,
+              color: theme.accent.primary,
+            }}
+          >
+            {item.hot}
+          </span>
+        </div>
+      )}
+      
+      {/* 外部链接图标 */}
+      {isHovered && (
+        <ExternalLinkIcon 
+          size={16} 
+          color={theme.text.tertiary}
+          style={{ animation: 'fadeIn 0.2s ease' }}
+        />
+      )}
+    </a>
+  )
+}
+
+// 骨架屏组件
+function SkeletonLoader({ theme, tokens }) {
+  return (
+    <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '10px 12px',
+          }}
+        >
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: tokens.borderRadius.base,
+              background: theme.bg.tertiary,
+              animation: 'pulse 1.5s ease-in-out infinite',
+              animationDelay: `${i * 0.05}s`,
+            }}
+          />
+          <div
+            style={{
+              flex: 1,
+              height: '16px',
+              borderRadius: tokens.borderRadius.sm,
+              background: theme.bg.tertiary,
+              animation: 'pulse 1.5s ease-in-out infinite',
+              animationDelay: `${i * 0.05 + 0.02}s`,
+            }}
+          />
         </div>
       ))}
     </div>
   )
 }
 
-function EmptyState({ colors }) {
+// 翻页组件
+function Pagination({ currentPage, totalPages, onPageChange, theme, tokens }) {
+  const canPrev = currentPage > 1
+  const canNext = currentPage < totalPages
+  
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '56px 16px', color: colors.textMuted, gap: 12,
-    }}>
-      <div style={{
-        color: colors.textMuted,
-        opacity: 0.6,
-        animation: 'hotlist-float 3s ease-in-out infinite',
-      }}>
-        {Icons.empty}
-      </div>
-      <span style={{ fontSize: 15, fontWeight: 500, color: colors.textSecondary }}>暂无数据</span>
-      <span style={{ fontSize: 12, opacity: 0.7 }}>请尝试切换平台或稍后刷新</span>
-    </div>
-  )
-}
-
-function ErrorState({ colors, onRetry }) {
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '56px 16px', color: colors.textMuted, gap: 12,
-    }}>
-      <div style={{
-        color: colors.accent,
-        opacity: 0.5,
-        animation: 'hotlist-pulse 2s ease-in-out infinite',
-      }}>
-        {Icons.error}
-      </div>
-      <span style={{ fontSize: 15, fontWeight: 500, color: colors.textSecondary }}>加载失败</span>
-      <span style={{ fontSize: 12, opacity: 0.7 }}>网络连接异常，请稍后重试</span>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        padding: '10px 16px',
+        borderTop: `1px solid ${theme.border.default}`,
+      }}
+    >
+      {/* 上一页按钮 */}
       <button
-        onClick={onRetry}
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={!canPrev}
         style={{
-          marginTop: 8,
-          padding: '8px 24px',
-          borderRadius: 20,
-          border: 'none',
-          background: `linear-gradient(135deg, ${colors.accent}, ${colors.accent}dd)`,
-          color: '#fff',
-          fontSize: 13,
-          fontWeight: 500,
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          boxShadow: `0 2px 8px ${colors.accent}40`,
+          width: '32px',
+          height: '32px',
+          borderRadius: tokens.borderRadius.md,
+          background: canPrev ? theme.bg.tertiary : 'transparent',
+          border: `1px solid ${canPrev ? theme.border.default : theme.border.default}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: canPrev ? 'pointer' : 'not-allowed',
+          opacity: canPrev ? 1 : 0.4,
+          transition: `all ${tokens.animation.duration.fast} ease`,
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-1px)'
-          e.currentTarget.style.boxShadow = `0 4px 12px ${colors.accent}60`
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = `0 2px 8px ${colors.accent}40`
+        title="上一页"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.text.secondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      
+      {/* 页码指示器 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
         }}
       >
-        重新加载
+        {Array.from({ length: totalPages }).map((_, i) => {
+          const pageNum = i + 1
+          const isActive = pageNum === currentPage
+          return (
+            <button
+              key={pageNum}
+              onClick={() => onPageChange(pageNum)}
+              style={{
+                minWidth: '28px',
+                height: '28px',
+                borderRadius: tokens.borderRadius.md,
+                background: isActive ? theme.accent.primary : 'transparent',
+                border: `1px solid ${isActive ? theme.accent.primary : theme.border.default}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: tokens.typography.fontSize.xs,
+                fontWeight: isActive ? tokens.typography.fontWeight.semibold : tokens.typography.fontWeight.medium,
+                color: isActive ? '#fff' : theme.text.secondary,
+                transition: `all ${tokens.animation.duration.fast} ease`,
+              }}
+            >
+              {pageNum}
+            </button>
+          )
+        })}
+      </div>
+      
+      {/* 下一页按钮 */}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={!canNext}
+        style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: tokens.borderRadius.md,
+          background: canNext ? theme.bg.tertiary : 'transparent',
+          border: `1px solid ${canNext ? theme.border.default : theme.border.default}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: canNext ? 'pointer' : 'not-allowed',
+          opacity: canNext ? 1 : 0.4,
+          transition: `all ${tokens.animation.duration.fast} ease`,
+        }}
+        title="下一页"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.text.secondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
       </button>
     </div>
   )
 }
 
-function RankBadge({ rank, colors }) {
-  const isTop3 = rank <= 3
-  // Retro-Futurism medal gradients
-  const medalStyles = {
-    1: {
-      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
-      boxShadow: '0 2px 8px rgba(255, 215, 0, 0.4)',
-      color: '#1E293B',
-    },
-    2: {
-      background: 'linear-gradient(135deg, #E8E8E8 0%, #C0C0C0 50%, #A8A8A8 100%)',
-      boxShadow: '0 2px 8px rgba(192, 192, 192, 0.4)',
-      color: '#1E293B',
-    },
-    3: {
-      background: 'linear-gradient(135deg, #CD7F32 0%, #B87333 50%, #CD7F32 100%)',
-      boxShadow: '0 2px 8px rgba(205, 127, 50, 0.4)',
-      color: '#fff',
-    },
-  }
-
-  const style = isTop3 ? medalStyles[rank] : {
-    background: colors.inputBg,
-    color: colors.textSecondary,
-    boxShadow: 'none',
-  }
-
+// 空状态组件
+function EmptyState({ theme, tokens, onRetry }) {
   return (
-    <span style={{
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 13,
-      fontWeight: 700,
-      flexShrink: 0,
-      transition: 'all 0.2s ease',
-      ...style,
-    }}>
-      {rank}
-    </span>
-  )
-}
-
-function HotPanel({ source, onSourceChange }) {
-  const { colors } = useTheme()
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
-  const [updateTime, setUpdateTime] = useState('')
-  const [hoveredIdx, setHoveredIdx] = useState(null)
-  const [hoveredTab, setHoveredTab] = useState(null)
-  const [hoveredBtn, setHoveredBtn] = useState(null)
-  const [showAnalytics, setShowAnalytics] = useState(false)
-  const tabBarRef = useRef(null)
-
-  const fetchData = useCallback((src) => {
-    setLoading(true)
-    setError(false)
-    fetch(`/api/hotlist/${src}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          setItems(data.data || [])
-          setUpdateTime(data.updateTime || '')
-        } else {
-          setError(true)
-        }
-      })
-      .catch(() => {
-        setItems([])
-        setError(true)
-      })
-      .finally(() => setLoading(false))
-  }, [])
-
-  useEffect(() => {
-    if (source) fetchData(source)
-  }, [source, fetchData])
-
-  const handleRefresh = () => {
-    if (!loading && source) fetchData(source)
-  }
-
-  const showToast = useToast()
-
-  // 导出当前热榜
-  const exportHotlist = (format) => {
-    const sourceName = TABS.find(t => t.key === source)?.label || source
-    const timestamp = new Date().toISOString().split('T')[0]
-    try {
-      if (format === 'json') {
-        const data = JSON.stringify({ source: sourceName, updateTime, items }, null, 2)
-        const blob = new Blob([data], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${sourceName}-hotlist-${timestamp}.json`
-        a.click()
-        URL.revokeObjectURL(url)
-      } else if (format === 'csv') {
-        const headers = '排名,标题,热度,链接\n'
-        const rows = items.map((item, idx) => `${idx + 1},"${(item.title || '').replace(/"/g, '""')}",${item.hot || ''},${item.url || ''}`).join('\n')
-        const data = headers + rows
-        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${sourceName}-hotlist-${timestamp}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
-      showToast && showToast(`导出成功！已保存为 ${format.toUpperCase()}`, 'success')
-    } catch (err) {
-      showToast && showToast('导出失败，请重试', 'error')
-    }
-  }
-
-  const tabBarStyle = {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '12px 12px 8px', overflowX: 'auto',
-    scrollbarWidth: 'none', msOverflowStyle: 'none',
-  }
-
-  const tabStyle = (isActive, isHover) => ({
-    padding: '5px 14px', borderRadius: 20, border: 'none',
-    background: isActive ? colors.accent : isHover ? colors.hover : 'transparent',
-    color: isActive ? '#fff' : colors.textSecondary,
-    cursor: 'pointer', fontSize: 13, fontWeight: isActive ? 600 : 400,
-    transition: 'all 0.2s ease', whiteSpace: 'nowrap', flexShrink: 0,
-    lineHeight: '22px',
-  })
-
-  const refreshBtnStyle = {
-    width: 36,
-    height: 36,
-    borderRadius: '50%',
-    border: 'none',
-    background: colors.hover,
-    color: colors.textSecondary,
-    cursor: loading ? 'default' : 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    transition: 'all 0.2s ease',
-    animation: loading ? 'hotlist-spin 1s linear infinite' : 'none',
-  }
-
-  const listContainerStyle = {
-    flex: 1, overflowY: 'auto', padding: '4px 12px 12px',
-    scrollbarWidth: 'thin',
-    scrollbarColor: `${colors.scrollThumb} ${colors.scrollTrack}`,
-  }
-
-  const itemStyle = (isHover, idx) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '10px 12px',
-    borderRadius: 12,
-    transition: 'all 0.2s ease',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    background: isHover ? colors.hover : 'transparent',
-    animation: `hotlist-fadeIn 0.3s ease-out ${idx * 0.03}s both`,
-  })
-
-  return (
-    <div style={{
-      background: colors.cardBg, borderRadius: 14,
-      border: `1px solid ${colors.border}`,
-      boxShadow: `0 2px 12px ${colors.shadow}`,
-      display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
-      minHeight: 0,
-    }}>
-      {/* Tab bar + refresh */}
-      <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${colors.border}` }}>
-        <div ref={tabBarRef} style={tabBarStyle} className="hotlist-hide-scrollbar">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              style={tabStyle(source === t.key, hoveredTab === t.key)}
-              onClick={() => onSourceChange(t.key)}
-              onMouseEnter={() => setHoveredTab(t.key)}
-              onMouseLeave={() => setHoveredTab(null)}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
-        </div>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '48px 24px',
+        gap: '16px',
+      }}
+    >
+      <div
+        style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: tokens.borderRadius.xl,
+          background: theme.bg.tertiary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <SearchIcon size={32} color={theme.text.tertiary} />
+      </div>
+      <span
+        style={{
+          fontSize: tokens.typography.fontSize.base,
+          color: theme.text.secondary,
+          fontWeight: tokens.typography.fontWeight.medium,
+        }}
+      >
+        暂无数据
+      </span>
+      {onRetry && (
         <button
-          style={refreshBtnStyle}
-          onClick={handleRefresh}
-          title="刷新数据"
-          onMouseEnter={(e) => { if (!loading) {
-            e.currentTarget.style.background = colors.accentLight
-            e.currentTarget.style.color = colors.accent
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = colors.hover
-            e.currentTarget.style.color = colors.textSecondary
+          onClick={onRetry}
+          style={{
+            padding: '10px 20px',
+            borderRadius: tokens.borderRadius.md,
+            background: theme.gradient.primary,
+            border: 'none',
+            color: '#fff',
+            fontSize: tokens.typography.fontSize.sm,
+            fontWeight: tokens.typography.fontWeight.medium,
+            cursor: 'pointer',
+            transition: `all ${tokens.animation.duration.fast} ease`,
+            boxShadow: theme.shadow.md,
           }}
         >
-          {Icons.refresh}
+          重新加载
         </button>
-        {items.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, marginRight: 8 }}>
-            <button
-              onClick={() => exportHotlist('json')}
-              onMouseEnter={() => setHoveredBtn('json')}
-              onMouseLeave={() => setHoveredBtn(null)}
-              style={{
-                padding: '5px 10px', borderRadius: 6,
-                border: `1px solid ${hoveredBtn === 'json' ? colors.accent : colors.border}`,
-                background: hoveredBtn === 'json' ? colors.accentLight : 'transparent',
-                color: hoveredBtn === 'json' ? colors.accent : colors.textSecondary,
-                cursor: 'pointer', fontSize: 11,
-                transition: 'all 0.2s', whiteSpace: 'nowrap',
-              }}
-              title="导出为 JSON"
-            >
-              JSON
-            </button>
-            <button
-              onClick={() => exportHotlist('csv')}
-              onMouseEnter={() => setHoveredBtn('csv')}
-              onMouseLeave={() => setHoveredBtn(null)}
-              style={{
-                padding: '5px 10px', borderRadius: 6,
-                border: `1px solid ${hoveredBtn === 'csv' ? colors.accent : colors.border}`,
-                background: hoveredBtn === 'csv' ? colors.accentLight : 'transparent',
-                color: hoveredBtn === 'csv' ? colors.accent : colors.textSecondary,
-                cursor: 'pointer', fontSize: 11,
-                transition: 'all 0.2s', whiteSpace: 'nowrap',
-              }}
-              title="导出为 CSV"
-            >
-              CSV
-            </button>
-            <button
-              onClick={() => setShowAnalytics(!showAnalytics)}
-              onMouseEnter={() => setHoveredBtn('analytics')}
-              onMouseLeave={() => setHoveredBtn(null)}
-              style={{
-                padding: '6px 12px', borderRadius: 8,
-                border: `1px solid ${showAnalytics ? colors.accent : hoveredBtn === 'analytics' ? colors.accent : colors.border}`,
-                background: showAnalytics ? colors.accentLight : hoveredBtn === 'analytics' ? colors.accentLight : 'transparent',
-                color: showAnalytics ? colors.accent : hoveredBtn === 'analytics' ? colors.accent : colors.textSecondary,
-                cursor: 'pointer', fontSize: 11,
-                transition: 'all 0.2s ease',
-                whiteSpace: 'nowrap',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-              title="数据分析"
-            >
-              {Icons.chart}
-              <span>分析</span>
-            </button>
-          </div>
-        )}
-        <div style={{ width: 12, flexShrink: 0 }} />
-      </div>
-
-      {/* Analytics Panel */}
-      {showAnalytics && (
-        <div style={{ maxHeight: 400, overflow: 'auto', padding: '0 12px' }}>
-          <HotlistAnalytics source={source} />
-        </div>
       )}
-
-      {/* Content */}
-      <div style={{ ...listContainerStyle, display: showAnalytics ? 'none' : 'block' }}>
-        {loading ? (
-          <SkeletonLoader colors={colors} />
-        ) : error && items.length === 0 ? (
-          <ErrorState colors={colors} onRetry={handleRefresh} />
-        ) : items.length === 0 ? (
-          <EmptyState colors={colors} />
-        ) : (
-          items.map((item, idx) => (
-            <div
-              key={idx}
-              style={itemStyle(hoveredIdx === idx, idx)}
-              onMouseEnter={() => setHoveredIdx(idx)}
-              onMouseLeave={() => setHoveredIdx(null)}
-            >
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={item.title}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10, flex: 1,
-                  textDecoration: 'none', color: 'inherit', minWidth: 0,
-                }}
-              >
-                <RankBadge rank={idx + 1} colors={colors} />
-                <span style={{
-                  flex: 1, fontSize: 14, color: colors.text,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  transition: 'color 0.15s',
-                }}>
-                  {item.title}
-                </span>
-              </a>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                {item.hot && (
-                  <span style={{
-                    fontSize: 12, color: colors.accent,
-                    marginRight: 8,
-                  }}>
-                    {item.hot}
-                  </span>
-                )}
-                <ShareButton item={{ ...item, source: TABS.find(t => t.key === source)?.label || source }} colors={colors} />
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </div>
   )
 }
 
-function FavoritesButton({ colors, onClick }) {
+// 单个热榜面板组件
+function HotPanel({ platform, theme, tokens }) {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [updateTime, setUpdateTime] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  const ITEMS_PER_PAGE = 10
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const currentItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await fetch(`/api/hotlist/${platform.key}`)
+      const data = await res.json()
+      if (data.success) {
+        setItems(data.data || [])
+        setUpdateTime(data.updateTime || '')
+        setCurrentPage(1) // 重置到第一页
+      } else {
+        setError(true)
+      }
+    } catch {
+      setError(true)
+      setItems([])
+    } finally {
+      setLoading(false)
+    }
+  }, [platform.key])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page)
+  }, [])
+
+  const Icon = platform.icon
+
   return (
-    <button
-      onClick={onClick}
+    <div
       style={{
-        position: 'fixed', bottom: 80, right: 20, zIndex: 99,
-        width: 52, height: 52, borderRadius: '50%',
-        background: `linear-gradient(135deg, ${colors.accent}, ${colors.accent}dd)`,
-        color: '#fff',
-        border: 'none',
-        boxShadow: `0 4px 16px ${colors.accent}50`,
-        cursor: 'pointer',
+        background: theme.gradient.card,
+        borderRadius: tokens.borderRadius.lg,
+        border: `1px solid ${theme.border.default}`,
+        boxShadow: theme.shadow.md,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.25s ease',
-      }}
-      title="我的收藏"
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.08)'
-        e.currentTarget.style.boxShadow = `0 6px 20px ${colors.accent}60`
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)'
-        e.currentTarget.style.boxShadow = `0 4px 16px ${colors.accent}50`
+        flexDirection: 'column',
+        overflow: 'hidden',
+        height: '100%',
+        minHeight: '400px',
       }}
     >
-      {Icons.star}
-    </button>
+      {/* 头部：平台标题 + 刷新按钮 */}
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: `1px solid ${theme.border.default}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+        }}
+      >
+        {/* 平台信息 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: tokens.borderRadius.md,
+              background: `${platform.color}15`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon size={18} color={platform.color} />
+          </div>
+          <span
+            style={{
+              fontSize: tokens.typography.fontSize.base,
+              fontWeight: tokens.typography.fontWeight.semibold,
+              color: theme.text.primary,
+            }}
+          >
+            {platform.label}
+          </span>
+        </div>
+
+        {/* 刷新按钮 */}
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: tokens.borderRadius.md,
+            background: theme.bg.tertiary,
+            border: `1px solid ${theme.border.default}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: `all ${tokens.animation.duration.fast} ease`,
+          }}
+          title="刷新"
+        >
+          <RefreshCwIcon
+            size={16}
+            color={theme.text.secondary}
+            style={{
+              animation: loading ? 'spin 1s linear infinite' : 'none',
+            }}
+          />
+        </button>
+      </div>
+
+      {/* 列表内容 */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: '8px',
+        }}
+      >
+        {loading ? (
+          <SkeletonLoader theme={theme} tokens={tokens} />
+        ) : error ? (
+          <EmptyState theme={theme} tokens={tokens} onRetry={fetchData} />
+        ) : items.length === 0 ? (
+          <EmptyState theme={theme} tokens={tokens} />
+        ) : (
+          currentItems.map((item, idx) => (
+            <HotListItem
+              key={startIndex + idx}
+              item={item}
+              index={startIndex + idx}
+              theme={theme}
+              tokens={tokens}
+            />
+          ))
+        )}
+      </div>
+
+      {/* 分页组件 */}
+      {!loading && !error && items.length > 0 && totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          theme={theme}
+          tokens={tokens}
+        />
+      )}
+
+      {/* 底部更新时间 */}
+      {updateTime && !loading && (
+        <div
+          style={{
+            padding: '10px 16px',
+            borderTop: `1px solid ${theme.border.default}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <div
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#22c55e',
+                animation: 'pulse 2s ease-in-out infinite',
+              }}
+            />
+            <span
+              style={{
+                fontSize: tokens.typography.fontSize.xs,
+                color: theme.text.tertiary,
+              }}
+              title={new Date(updateTime).toLocaleString('zh-CN')}
+            >
+              {formatTimeAgo(updateTime)}
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: tokens.typography.fontSize.xs,
+              color: theme.text.tertiary,
+            }}
+          >
+            共 {items.length} 条 · 第 {currentPage}/{totalPages || 1} 页
+          </span>
+        </div>
+      )}
+    </div>
   )
 }
 
-export default function HotList({ singleSource = null }) {
-  // 如果是单平台模式，只显示一个面板
-  const [sources, setSources] = useState(singleSource ? [singleSource] : ['zhihu', 'weibo'])
-  const [isSingle, setIsSingle] = useState(window.innerWidth < 900 || !!singleSource)
-  const [showFavorites, setShowFavorites] = useState(false)
+// 主组件
+export default function HotList() {
+  const { theme, tokens } = useTheme()
+  const [columns, setColumns] = useState(getGridColumns(window.innerWidth))
 
   useEffect(() => {
-    if (singleSource) {
-      setIsSingle(true)
-      setSources([singleSource])
-      return
-    }
-    const onResize = () => setIsSingle(window.innerWidth < 900)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [singleSource])
-
-  const handleSourceChange = (panelIdx, newSource) => {
-    if (singleSource) return // 单平台模式不允许切换
-    setSources((prev) => {
-      const next = [...prev]
-      next[panelIdx] = newSource
-      return next
-    })
-  }
-
-  const panelCount = singleSource ? 1 : (isSingle ? 1 : 2)
-  const { colors } = useTheme()
+    const handleResize = () => setColumns(getGridColumns(window.innerWidth))
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   return (
-    <>
-      {showFavorites && (
-        <FavoritesPanel colors={colors} onClose={() => setShowFavorites(false)} />
-      )}
-      <FavoritesButton colors={colors} onClick={() => setShowFavorites(true)} />
-      <style>{`
-        @keyframes hotlist-shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-        @keyframes hotlist-spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes hotlist-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
-        @keyframes hotlist-pulse {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.02); }
-        }
-        @keyframes hotlist-fadeIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .hotlist-hide-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
-      <div style={{
+    <div
+      style={{
         display: 'grid',
-        gridTemplateColumns: isSingle || singleSource ? '1fr' : '1fr 1fr',
-        gap: 16, padding: 16, height: '100%',
-        overflow: 'hidden', boxSizing: 'border-box',
-      }}>
-        {Array.from({ length: panelCount }).map((_, i) => (
-          <HotPanel
-            key={i}
-            source={sources[i]}
-            onSourceChange={(src) => handleSourceChange(i, src)}
-          />
-        ))}
-      </div>
-    </>
+        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gap: '20px',
+        height: '100%',
+        overflow: 'auto',
+        boxSizing: 'border-box',
+      }}
+    >
+      {PLATFORMS.map((platform) => (
+        <HotPanel
+          key={platform.key}
+          platform={platform}
+          theme={theme}
+          tokens={tokens}
+        />
+      ))}
+      
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+    </div>
   )
 }

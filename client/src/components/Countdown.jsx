@@ -1,24 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../ThemeContext.jsx'
-
-// SVG Icons
-const RunIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="5" r="2"/>
-    <path d="M4 17l3-3 3 3M15 17l3-3 3 3"/>
-    <path d="M12 7v10"/>
-  </svg>
-)
-
-const CheckCircleIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-    <polyline points="22,4 12,14.01 9,11.01"/>
-  </svg>
-)
+import { ClockIcon } from './Icons.jsx'
 
 export default function Countdown() {
-  const { colors } = useTheme()
+  const { theme, tokens } = useTheme()
   const [display, setDisplay] = useState('')
   const [progress, setProgress] = useState(0)
   const [isOffWork, setIsOffWork] = useState(false)
@@ -61,55 +46,122 @@ export default function Countdown() {
 
   if (isOffWork) {
     return (
-      <span style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        fontWeight: 600,
-        color: '#22C55E',
-        padding: '4px 12px',
-        background: 'rgba(34, 197, 94, 0.15)',
-        borderRadius: 20,
-      }}>
-        <CheckCircleIcon />
-        <span>已下班！</span>
-      </span>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 14px',
+          borderRadius: tokens.borderRadius.md,
+          background: `${theme.status.success}15`,
+          border: `1px solid ${theme.status.success}30`,
+        }}
+      >
+        <span style={{ fontSize: '16px' }}>🎉</span>
+        <span
+          style={{
+            fontSize: tokens.typography.fontSize.sm,
+            fontWeight: tokens.typography.fontWeight.semibold,
+            color: theme.status.success,
+          }}
+        >
+          已下班！
+        </span>
+      </div>
     )
   }
 
   return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 8,
-      fontWeight: 500,
-      fontSize: 13,
-    }}>
-      <span style={{
-        display: 'inline-flex',
+    <div
+      style={{
+        display: 'flex',
         alignItems: 'center',
-        gap: 4,
-        color: colors.textSecondary,
-      }}>
-        <RunIcon />
-        <span>下班</span>
-      </span>
-      <span style={{
-        color: colors.accent,
-        fontFamily: 'Fredoka, monospace',
-        fontWeight: 600,
-        fontSize: 14,
-      }}>
-        {display}
-      </span>
-      <span style={{ color: colors.textMuted }}>|</span>
-      <span style={{ color: colors.textSecondary }}>进度</span>
-      <span style={{
-        color: colors.accent,
-        fontWeight: 600,
-      }}>
-        {progress}%
-      </span>
-    </span>
+        gap: '10px',
+        padding: '8px 14px',
+        borderRadius: tokens.borderRadius.md,
+        background: theme.bg.tertiary,
+        border: `1px solid ${theme.border.default}`,
+      }}
+    >
+      {/* Icon */}
+      <div
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: tokens.borderRadius.base,
+          background: `${theme.accent.primary}15`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ClockIcon size={16} color={theme.accent.primary} />
+      </div>
+
+      {/* Countdown */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span
+            style={{
+              fontSize: tokens.typography.fontSize.xs,
+              color: theme.text.tertiary,
+              fontWeight: tokens.typography.fontWeight.medium,
+            }}
+          >
+            下班
+          </span>
+          <span
+            style={{
+              fontSize: tokens.typography.fontSize.sm,
+              fontWeight: tokens.typography.fontWeight.bold,
+              color: theme.accent.primary,
+              fontFamily: tokens.typography.fontFamily.mono,
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {display}
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <div
+            style={{
+              width: '60px',
+              height: '4px',
+              borderRadius: '2px',
+              background: theme.bg.elevated,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: '100%',
+                borderRadius: '2px',
+                background: `linear-gradient(90deg, ${theme.accent.primary} 0%, ${theme.accent.primaryHover} 100%)`,
+                transition: 'width 1s ease',
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontSize: '10px',
+              color: theme.text.tertiary,
+              fontWeight: tokens.typography.fontWeight.medium,
+              fontFamily: tokens.typography.fontFamily.mono,
+            }}
+          >
+            {progress}%
+          </span>
+        </div>
+      </div>
+    </div>
   )
 }

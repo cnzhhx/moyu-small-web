@@ -146,37 +146,57 @@ async function fetchWithMetrics(name, fetchFn) {
 //  数据源抓取函数
 // ====================================================================
 
-/** 知乎热榜 */
+/**
+ * 通用 tophub.today 热榜解析
+ * @param {string} html - tophub 页面 HTML
+ * @returns {Array<{title: string, url: string, hot: string}>}
+ */
+function parseTophubHtml(html) {
+  const $ = cheerio.load(html);
+  const items = [];
+  $('table tbody tr').each((i, el) => {
+    const tds = $(el).find('td');
+    const linkEl = tds.eq(2).find('a');
+    const title = linkEl.text().trim().split('\n')[0].trim();
+    const url = linkEl.attr('href') || '#';
+    const hot = tds.eq(2).text().replace(title, '').trim();
+    if (title) items.push({ title, url, hot });
+  });
+  return items;
+}
+
+/** 知乎热榜 - 通过 tophub.today 聚合获取 */
 async function fetchZhihu() {
   return dedupedFetch('zhihu', async () =>
     fetchWithMetrics('zhihu', async () => {
-      const { data } = await fetchWithRetry({
+      const { data: html } = await fetchWithRetry({
         method: 'get',
-        url: 'https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total?limit=20&desktop=true',
+        url: 'https://tophub.today/n/mproPpoq6O',
         headers: {
           ...defaultHeaders(),
-          Referer: 'https://www.zhihu.com/hot',
-          Cookie: '_zap=random; d_c0=random',
+          Referer: 'https://tophub.today/',
         },
         timeout: REQUEST_TIMEOUT,
       });
-      return (data.data || []).map((item) => ({
-        title: item.target?.title || item.title || '',
-        url: item.target?.id ? `https://www.zhihu.com/question/${item.target.id}` : '#',
-        hot: item.detail_text || (item.hot_score ? formatHot(item.hot_score) : ''),
-      }));
+      const items = parseTophubHtml(html).slice(0, 20);
+      if (!items.length) throw new Error('知乎热榜获取为空');
+      return items;
     })
   );
 }
 
-/** 微博热搜 */
+/** 微博热搜 - 需要 Referer */
 async function fetchWeibo() {
   return dedupedFetch('weibo', async () =>
     fetchWithMetrics('weibo', async () => {
       const { data } = await fetchWithRetry({
         method: 'get',
         url: 'https://weibo.com/ajax/side/hotSearch',
-        headers: defaultHeaders(),
+        headers: {
+          ...defaultHeaders(),
+          Referer: 'https://weibo.com/hot/search',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
         timeout: REQUEST_TIMEOUT,
       });
       return (data.data?.realtime || []).slice(0, 20).map((item) => ({
@@ -188,40 +208,50 @@ async function fetchWeibo() {
   );
 }
 
-/** B站热门 */
+/** B站热门 - 通过 tophub.today 聚合获取 */
 async function fetchBilibili() {
   return dedupedFetch('bilibili', async () =>
     fetchWithMetrics('bilibili', async () => {
-      const { data } = await fetchWithRetry({
+      const { data: html } = await fetchWithRetry({
         method: 'get',
-        url: 'https://api.bilibili.com/x/web-interface/ranking/v2?rid=0&type=all',
-        headers: defaultHeaders(),
+        url: 'https://tophub.today/n/74KvxwokxM',
+        headers: {
+          ...defaultHeaders(),
+          Referer: 'https://tophub.today/',
+        },
         timeout: REQUEST_TIMEOUT,
       });
-      return (data.data?.list || []).slice(0, 20).map((item) => ({
-        title: item.title || '',
-        url: item.short_link_v2 || `https://www.bilibili.com/video/${item.bvid}`,
-        hot: item.stat?.view ? `${formatHot(item.stat.view)}播放` : '',
-      }));
+      const items = parseTophubHtml(html).slice(0, 20);
+      if (!items.length) throw new Error('B站热门获取为空');
+      return items;
     })
   );
 }
 
-/** 掘金热榜 */
+/** 掘金热榜 - 使用推荐 feed API */
 async function fetchJuejin() {
   return dedupedFetch('juejin', async () =>
     fetchWithMetrics('juejin', async () => {
       const { data } = await fetchWithRetry({
         method: 'post',
-        url: 'https://api.juejin.cn/content_api/v1/content/article_rank?category_id=1&type=hot&count=20&from=0',
-        data: {},
-        headers: { ...defaultHeaders(), 'Content-Type': 'application/json' },
+        url: 'https://api.juejin.cn/recommend_api/v1/article/recommend_all_feed',
+        data: {
+          sort_type: 200,  // 热榜排序
+          cursor: '0',
+          limit: 20,
+        },
+        headers: {
+          ...defaultHeaders(),
+          'Content-Type': 'application/json',
+          Referer: 'https://juejin.cn/',
+        },
         timeout: REQUEST_TIMEOUT,
       });
-      return (data.data || []).map((item) => ({
-        title: item.content?.title || '',
-        url: item.content?.content_id ? `https://juejin.cn/post/${item.content.content_id}` : '#',
-        hot: item.content_counter?.hot_rank ? formatHot(item.content_counter.hot_rank) : '',
+      return (data.data || []).map((item, index) => ({
+        title: item.item_info?.article_info?.title || '',
+        url: item.item_info?.article_id ? `https://juejin.cn/post/${item.item_info.article_id}` : '#',
+        hot: item.item_info?.article_info?.view_count ? formatHot(item.item_info.article_info.view_count) : '',
+        image: item.item_info?.article_info?.cover_image || null,
       }));
     })
   );
@@ -275,34 +305,6 @@ async function fetchBaidu() {
   );
 }
 
-/** 虎扑热帖 */
-async function fetchHupu() {
-  return dedupedFetch('hupu', async () =>
-    fetchWithMetrics('hupu', async () => {
-      const { data: html } = await fetchWithRetry({
-        method: 'get',
-        url: 'https://bbs.hupu.com/all-gambia',
-        headers: { ...defaultHeaders(), Accept: 'text/html' },
-        timeout: REQUEST_TIMEOUT,
-        responseType: 'text',
-      });
-      const $ = cheerio.load(html);
-      const list = [];
-      $('a.p-title, .textSpan, .list-item a[href*="/"]').each((i, el) => {
-        if (list.length >= 20) return false;
-        const title = $(el).text().trim();
-        let href = $(el).attr('href') || '';
-        if (href && !href.startsWith('http')) href = `https://bbs.hupu.com${href}`;
-        if (title && title.length > 4) {
-          list.push({ title, url: href || '#', hot: '' });
-        }
-      });
-      if (!list.length) throw new Error('虎扑解析为空');
-      return list;
-    })
-  );
-}
-
 /** 36氪快讯 */
 async function fetch36kr() {
   return dedupedFetch('36kr', async () =>
@@ -318,25 +320,6 @@ async function fetch36kr() {
         title: item.title || item.entity?.title || '',
         url: item.news_url || (item.id ? `https://36kr.com/newsflashes/${item.id}` : '#'),
         hot: item.counters?.view ? formatHot(item.counters.view) : '',
-      }));
-    })
-  );
-}
-
-/** 少数派热门 */
-async function fetchSspai() {
-  return dedupedFetch('sspai', async () =>
-    fetchWithMetrics('sspai', async () => {
-      const { data } = await fetchWithRetry({
-        method: 'get',
-        url: 'https://sspai.com/api/v1/article/tag/page/get?limit=20&offset=0&tag=%E7%83%AD%E9%97%A8',
-        headers: { ...defaultHeaders(), Referer: 'https://sspai.com/' },
-        timeout: REQUEST_TIMEOUT,
-      });
-      return (data.data || []).slice(0, 20).map((item) => ({
-        title: item.title || '',
-        url: item.id ? `https://sspai.com/post/${item.id}` : '#',
-        hot: item.like_count ? formatHot(item.like_count) : '',
       }));
     })
   );
@@ -364,69 +347,6 @@ async function fetchToutiao() {
   );
 }
 
-/** GitHub Trending */
-async function fetchGithub() {
-  return dedupedFetch('github', async () =>
-    fetchWithMetrics('github', async () => {
-      const { data: html } = await fetchWithRetry({
-        method: 'get',
-        url: 'https://github.com/trending',
-        headers: {
-          ...defaultHeaders(),
-          Accept: 'text/html',
-          Referer: 'https://github.com/',
-        },
-        timeout: REQUEST_TIMEOUT,
-        responseType: 'text',
-      });
-      const $ = cheerio.load(html);
-      const list = [];
-
-      // GitHub Trending 页面结构
-      $('article.Box-row').each((i, el) => {
-        if (i >= 20) return false;
-        const $el = $(el);
-        const $link = $el.find('h2 a');
-        const href = $link.attr('href') || '';
-        const title = $link.text().trim().replace(/\s+/g, ' ');
-        const description = $el.find('p.col-9').text().trim();
-        const starsText = $el.find('[href$="/stargazers"]').text().trim();
-        const language = $el.find('[itemprop="programmingLanguage"]').text().trim();
-
-        if (title) {
-          list.push({
-            title: `${title}${language ? ` [${language}]` : ''}`,
-            description: description || '',
-            url: href.startsWith('http') ? href : `https://github.com${href}`,
-            hot: starsText || '',
-          });
-        }
-      });
-
-      if (!list.length) {
-        // 备用解析策略
-        $('a[href^="/"][href*="/"]').each((i, el) => {
-          if (list.length >= 20) return false;
-          const $el = $(el);
-          const href = $el.attr('href') || '';
-          const text = $el.text().trim();
-          // 匹配 owner/repo 格式
-          if (/^[\w-]+\/[\w.-]+$/.test(text) && href.includes(text)) {
-            list.push({
-              title: text,
-              url: `https://github.com${href}`,
-              hot: '',
-            });
-          }
-        });
-      }
-
-      if (!list.length) throw new Error('GitHub Trending 解析为空');
-      return list;
-    })
-  );
-}
-
 // ====================================================================
 //  源注册表
 // ====================================================================
@@ -438,20 +358,17 @@ const SOURCES = {
   juejin:   { fetch: fetchJuejin,   label: '掘金' },
   douyin:   { fetch: fetchDouyin,   label: '抖音' },
   baidu:    { fetch: fetchBaidu,    label: '百度' },
-  hupu:     { fetch: fetchHupu,     label: '虎扑' },
   '36kr':   { fetch: fetch36kr,     label: '36氪' },
-  sspai:    { fetch: fetchSspai,    label: '少数派' },
   toutiao:  { fetch: fetchToutiao,  label: '今日头条' },
-  github:   { fetch: fetchGithub,   label: 'GitHub' },
 };
 
 // ====================================================================
-//  通用路由工厂
+//  通用路由工厂 - 只读缓存，不实时爬取
 // ====================================================================
 
 function registerRoute(name) {
   router.get(`/${name}`, async (req, res) => {
-    // 检查缓存
+    // 优先从缓存读取
     const cached = await getCache(name);
     if (cached) {
       recordCacheHit(name);
@@ -459,27 +376,27 @@ function registerRoute(name) {
       return res.json(cached);
     }
 
+    // 缓存未命中，尝试实时抓取一次
     recordCacheMiss(name);
     logCacheEvent('miss', name, { requestId: req.requestId });
 
+    const source = SOURCES[name];
+    if (!source) {
+      return res.status(404).json({ success: false, message: '未知数据源', data: [], source: name });
+    }
+
     try {
-      const list = await SOURCES[name].fetch();
-      if (!list.length) {
-        return res.status(503).json({
-          success: false,
-          message: `获取 ${name} 热榜失败：数据源返回空`,
-          data: [],
-          source: name,
-        });
+      const list = await source.fetch();
+      if (list && list.length > 0) {
+        const result = buildResponse(list, name);
+        await setCache(name, result);
+        return res.json(result);
       }
-      const result = buildResponse(list, name);
-      await setCache(name, result);
-      logCacheEvent('set', name, { entriesCount: list.length });
-      res.json(result);
+      res.status(503).json({ success: false, message: '数据源暂时无数据', data: [], source: name });
     } catch (err) {
       res.status(503).json({
         success: false,
-        message: `获取 ${name} 热榜失败：${err.message}`,
+        message: `数据获取失败，请稍后再试`,
         data: [],
         source: name,
       });
@@ -497,84 +414,88 @@ for (const name of Object.keys(SOURCES)) {
 // ====================================================================
 
 router.get('/all', async (req, res) => {
-  // 检查缓存
-  const cached = await getCache('__all__');
-  if (cached) {
-    recordCacheHit('__all__');
-    logCacheEvent('hit', '__all__', { requestId: req.requestId });
-    return res.json(cached);
-  }
-
-  recordCacheMiss('__all__');
-  logCacheEvent('miss', '__all__', { requestId: req.requestId });
-
   const names = Object.keys(SOURCES);
+  const payload = {};
 
-  const settled = await Promise.allSettled(
-    names.map(async (name) => {
-      // 单源也走缓存
-      const c = await getCache(name);
-      if (c) {
-        recordCacheHit(name);
-        return { name, ...c };
-      }
-
+  // 并行读取缓存，对缓存未命中的尝试实时抓取
+  await Promise.all(names.map(async (name) => {
+    const cached = await getCache(name);
+    if (cached) {
+      recordCacheHit(name);
+      payload[name] = {
+        success: cached.success,
+        data: cached.data,
+        source: cached.source,
+        updateTime: cached.updateTime,
+      };
+    } else {
       recordCacheMiss(name);
-
+      // 尝试实时抓取
       try {
         const list = await SOURCES[name].fetch();
-        if (!list.length) {
-          return {
-            name,
-            success: false,
-            message: `获取 ${name} 热榜失败：数据源返回空`,
-            data: [],
-            source: name,
-            updateTime: new Date().toISOString(),
-          };
+        if (list && list.length > 0) {
+          const result = buildResponse(list, name);
+          await setCache(name, result);
+          payload[name] = result;
+          return;
         }
-        const result = buildResponse(list, name);
-        await setCache(name, result);
-        logCacheEvent('set', name, { entriesCount: list.length });
-        return { name, ...result };
-      } catch (err) {
-        return {
-          name,
-          success: false,
-          message: `获取 ${name} 热榜失败：${err.message}`,
-          data: [],
-          source: name,
-          updateTime: new Date().toISOString(),
-        };
-      }
-    }),
-  );
+      } catch {}
+      payload[name] = {
+        success: false,
+        message: '数据正在初始化中',
+        data: [],
+        source: name,
+        updateTime: new Date().toISOString(),
+      };
+    }
+  }));
 
-  const payload = {};
-  for (const item of settled) {
-    const val = item.status === 'fulfilled' ? item.value : {
-      name: 'unknown',
-      success: false,
-      message: '获取热榜失败：未知错误',
-      data: [],
-      source: 'unknown',
-      updateTime: new Date().toISOString(),
-    };
-    payload[val.name] = {
-      success: val.success,
-      data: val.data,
-      source: val.source,
-      updateTime: val.updateTime,
-      ...(val.message && { message: val.message }),
-    };
-  }
-
-  const allResult = { success: true, data: payload, updateTime: new Date().toISOString() };
-  await setCache('__all__', allResult);
-  logCacheEvent('set', '__all__', { sourcesCount: names.length });
-  res.json(allResult);
+  res.json({
+    success: true,
+    data: payload,
+    updateTime: new Date().toISOString(),
+  });
 });
 
-// 导出缓存统计函数
-export { getCacheStats, resetCacheStats };
+// ====================================================================
+//  定时更新任务
+// ====================================================================
+
+import { registerHotlistTasks, getSchedulerStatus } from '../utils/scheduler.js';
+
+/**
+ * 初始化热榜定时更新
+ * @param {number} intervalMinutes - 更新间隔（分钟），默认2小时
+ */
+export function initHotlistScheduler(intervalMinutes = 120) {
+  console.log(`[热榜] 初始化定时更新，间隔: ${intervalMinutes} 分钟，时间段: 8:00-22:00`);
+
+  // 注册所有热榜任务
+  registerHotlistTasks(SOURCES, intervalMinutes);
+}
+
+/**
+ * 手动触发所有热榜更新
+ */
+export async function refreshAllHotlists() {
+  console.log('[热榜] 手动触发全量更新');
+  for (const [name, config] of Object.entries(SOURCES)) {
+    try {
+      const list = await config.fetch();
+      if (list && list.length > 0) {
+        const result = buildResponse(list, name);
+        await setCache(name, result);
+        console.log(`[热榜] ${config.label} 已刷新`);
+      }
+    } catch (err) {
+      console.error(`[热榜] ${config.label} 刷新失败:`, err.message);
+    }
+    // 添加延迟避免并发
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  console.log('[热榜] 全量更新完成');
+}
+
+// 导出函数
+export { getCacheStats, resetCacheStats, getSchedulerStatus };
 export default router;

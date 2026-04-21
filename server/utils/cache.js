@@ -48,7 +48,6 @@ export async function getCache(key) {
     try {
       const data = await redis.get(key);
       if (data) {
-        cacheStats.hits++;
         return JSON.parse(data);
       }
     } catch (err) {
@@ -59,12 +58,10 @@ export async function getCache(key) {
   // 回退到内存缓存
   const entry = memoryCache.get(key);
   if (entry && Date.now() - entry.time < CACHE_TTL * 1000) {
-    cacheStats.hits++;
     return entry.data;
   }
 
   memoryCache.delete(key);
-  cacheStats.misses++;
   return null;
 }
 
